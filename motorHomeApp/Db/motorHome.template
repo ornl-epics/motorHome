@@ -581,31 +581,18 @@ record(calcout, "$(M)$(H)LimCtlRestoreL") {
 record(dfanout, "$(M)$(H)Abort") {
   field(DOL, "1")
   field(OUTA, "$(M)$(H)SetAborted.PROC PP")
-  field(OUTB, "$(M)$(H)HomeMR:CalcAbort.PROC PP")
-  field(OUTC, "$(M)$(H)HomeLim:CalcAbort.PROC PP")
-  field(OUTD, "$(M).STOP PP")
+  field(OUTB, "$(M)$(H)HomeMRAbort.PROC PP")
+  field(OUTC, "$(M)$(H)HomeLimAbort.PROC PP")
+  field(OUTD, "$(M)$(H)HomePosSetAbort.PROC PP")
+  field(OUTE, "$(M).STOP PP")
 }
 
 record(dfanout, "$(M)$(H)Error") {
   field(DOL, "1")
   field(OUTA, "$(M)$(H)SetError.PROC PP")
-  field(OUTB, "$(M)$(H)HomeMR:CalcAbort.PROC PP")
-  field(OUTC, "$(M)$(H)HomeLim:CalcAbort.PROC PP")
-}
-
-record(calcout, "$(M)$(H)HomeMR:CalcAbort") {
-  field(INPA, "$(M)$(H)Status")
-  field(CALC, "A=1")
-  field(OOPT, "When Non-zero")
-  field(DOPT, "Use CALC")
-  field(OUT, "$(M)$(H)HomeMR:Abort.PROC PP")
-}
-record(calcout, "$(M)$(H)HomeLim:CalcAbort") {
-  field(INPA, "$(M)$(H)Status")
-  field(CALC, "A=1")
-  field(OOPT, "When Non-zero")
-  field(DOPT, "Use CALC")
-  field(OUT, "$(M)$(H)HomeLim:Abort.PROC PP")
+  field(OUTB, "$(M)$(H)HomeMRAbort.PROC PP")
+  field(OUTC, "$(M)$(H)HomeLimAbort.PROC PP")
+  field(OUTC, "$(M)$(H)HomePosSetAbort.PROC PP")
 }
 
 record(calcout, "$(M)$(H)SetAborted") {

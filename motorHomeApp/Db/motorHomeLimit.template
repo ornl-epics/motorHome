@@ -136,25 +136,23 @@ record(ao, "$(M)$(H)HomeLimBODist") {
 }
 
 # ///
-# /// Abort the sequence and generate an error. This is not
-# /// a manual abort, and should be not run during a move, 
-# /// so we don't need to stop the motor.
-# ///
-record(dfanout, "$(M)$(H)HomeLimError") {
-  field(DOL, "1")
-  field(OUTA, "$(M)$(H)SetError.PROC PP")
-  field(OUTB, "$(M)$(H)HomeLimAbort.PROC PP")
-}
-
-# ///
 # /// Abort both limit sseq records.
 # /// If we are in the middle of setting position, then 
 # /// we don't abort that. 
 # ///
-record(dfanout, "$(M)$(H)HomeLimAbort") {
-  field(DOL, "1")
-  field(OUTA, "$(M)$(H)HomeLim.ABORT PP")
-  field(OUTB, "$(M)$(H)HomeLim2.ABORT PP")
-
+record(calcout, "$(M)$(H)HomeLimAbort") {
+  field(INPA, "$(M)$(H)HomeLim.BUSY")
+  field(CALC, "A=1")
+  field(OOPT, "When Non-zero")
+  field(DOPT, "Use CALC")
+  field(OUT, "$(M)$(H)HomeLim.ABORT PP")
+  field(FLNK, "$(M)$(H)HomeLim2Abort")
+}
+record(calcout, "$(M)$(H)HomeLim2Abort") {
+  field(INPA, "$(M)$(H)HomeLim2.BUSY")
+  field(CALC, "A=1")
+  field(OOPT, "When Non-zero")
+  field(DOPT, "Use CALC")
+  field(OUT, "$(M)$(H)HomeLim2.ABORT PP")
 }
 

@@ -134,9 +134,13 @@ record(dfanout, "$(M)$(H)HomeMRError") {
 # ///
 # /// Abort the sseq record.
 # ///
-record(dfanout, "$(M)$(H)HomeMRAbort") {
-  field(DOL, "1")
-  field(OUTA, "$(M)$(H)HomeMR.ABORT PP")
+record(calcout, "$(M)$(H)HomeMRAbort") {
+  field(INPA, "$(M)$(H)HomeMR.BUSY")
+  field(CALC, "A=1")
+  field(OOPT, "When Non-zero")
+  field(DOPT, "Use CALC")
+  field(OUT, "$(M)$(H)HomeMR.ABORT PP")
 }
+
 
 
