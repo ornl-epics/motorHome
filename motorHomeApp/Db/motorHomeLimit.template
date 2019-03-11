@@ -42,19 +42,19 @@ record(sseq, "$(M)$(H)HomeLim") {
   field(LNK3, "$(M)$(H)PMMove.PROC CA")
   field(DLY4, "1")
   field(DOL4, "1")
-  field(LNK4, "$(M)$(H)Lim:Move.PROC CA")
+  field(LNK4, "$(M)$(H)LimMove.PROC CA")
   field(DLY5, "1")
   field(DOL5, "1")
-  field(LNK5, "$(M)$(H)Lim:Check.PROC CA")
+  field(LNK5, "$(M)$(H)LimCheck.PROC CA")
   field(DLY6, "0")
   field(DOL6, "1")
-  field(LNK6, "$(M)$(H)HomeLim:BO.PROC CA")
+  field(LNK6, "$(M)$(H)HomeLimBO.PROC CA")
   field(DLY7, "0")
   field(DOL7, "$(M)$(H)Speed.VAL")
   field(LNK7, "$(M).VELO CA")
   field(DLY8, "1")
   field(DOL8, "1")
-  field(LNK8, "$(M)$(H)Lim:Move.PROC CA")
+  field(LNK8, "$(M)$(H)LimMove.PROC CA")
   field(DLY9, "0")
   field(DOL9, "1")
   field(LNK9, "$(M)$(H)HomeLim2.PROC CA")
@@ -68,13 +68,13 @@ record(sseq, "$(M)$(H)HomeLim2") {
   field(WAIT5, "Wait")
   field(DLY1, "1")
   field(DOL1, "1")
-  field(LNK1, "$(M)$(H)Lim:Check.PROC CA")
+  field(LNK1, "$(M)$(H)LimCheck.PROC CA")
   field(DLY2, "0")
   field(DOL2, "1")
   field(LNK2, "$(M)$(H)RestoreSpeed.PROC CA")
   field(DLY3, "1")
   field(DOL3, "1")
-  field(LNK3, "$(M)$(H)PosSet.PROC CA")
+  field(LNK3, "$(M)$(H)PS.PROC CA")
   field(DLY4, "1")
   field(DOL4, "1")
   field(LNK4, "$(M)$(H)MBMove.PROC CA")
@@ -85,29 +85,29 @@ record(sseq, "$(M)$(H)HomeLim2") {
 
 # ///
 # /// Backoff the limit switch.
-# /// This could be done in one calcout, but I seperate 
-# /// it so it's slightly easier to understand.
+# /// This could be done in one calcout, but separate
+# /// it's slightly easier to understand.
 # ///
-record(calcout, "$(M)$(H)HomeLim:BO") {
-  field(INPA, "$(M)$(H)Lim:Type")
+record(calcout, "$(M)$(H)HomeLimBO") {
+  field(INPA, "$(M)$(H)LimType")
   field(INPB, "$(M)$(H)DirReverse")
   field(CALC, "B=1?(A?A:A+2):A+1")
   field(OOPT, "Every Time")
   field(DOPT, "Use CALC")
-  field(OUT, "$(M)$(H)HomeLim:BOSeq.SELN PP")
+  field(OUT, "$(M)$(H)HomeLimBOSeq.SELN PP")
 }
-record(seq, "$(M)$(H)HomeLim:BOSeq") {
+record(seq, "$(M)$(H)HomeLimBOSeq") {
   field(SELM, "Specified")
   field(DOL1, "1")
   field(DOL2, "1")
-  field(LNK1, "$(M)$(H)HomeLim:BOLL.PROC PP")
-  field(LNK2, "$(M)$(H)HomeLim:BOHL.PROC PP")
+  field(LNK1, "$(M)$(H)HomeLimBOLL.PROC PP")
+  field(LNK2, "$(M)$(H)HomeLimBOHL.PROC PP")
 }
 # ///
 # /// Backoff the high limit
 # ///
-record(calcout, "$(M)$(H)HomeLim:BOHL") {
-  field(INPA, "$(M)$(H)Backoff")
+record(calcout, "$(M)$(H)HomeLimBOHL") {
+  field(INPA, "$(M)$(H)HomeLimBODist")
   field(INPB, "$(M).RBV")
   field(CALC, "B-A")
   field(OOPT, "Every Time")
@@ -117,7 +117,7 @@ record(calcout, "$(M)$(H)HomeLim:BOHL") {
 # ///
 # /// Backoff the low limit
 # ///
-record(calcout, "$(M)$(H)HomeLim:BOLL") {
+record(calcout, "$(M)$(H)HomeLimBOLL") {
   field(INPA, "$(M)$(H)Backoff")
   field(INPB, "$(M).RBV")
   field(CALC, "B+A")
@@ -125,16 +125,25 @@ record(calcout, "$(M)$(H)HomeLim:BOLL") {
   field(DOPT, "Use CALC")
   field(OUT, "$(M).DVAL PP")
 }
+# ///
+# /// Backoff Distance (defaults to 1)
+# ///
+record(ao, "$(M)$(H)HomeLimBODist") {
+  field(PINI, "YES")
+  field(VAL, "$(H_BACKOFF=1)")
+  field(EGU, "$(H_EGU=mm)")
+  field(PREC, "$(H_PREC=4)")
+}
 
 # ///
 # /// Abort the sequence and generate an error. This is not
 # /// a manual abort, and should be not run during a move, 
 # /// so we don't need to stop the motor.
 # ///
-record(dfanout, "$(M)$(H)HomeLim:Error") {
+record(dfanout, "$(M)$(H)HomeLimError") {
   field(DOL, "1")
   field(OUTA, "$(M)$(H)SetError.PROC PP")
-  field(OUTB, "$(M)$(H)HomeLim:Abort.PROC PP")
+  field(OUTB, "$(M)$(H)HomeLimAbort.PROC PP")
 }
 
 # ///
@@ -142,7 +151,7 @@ record(dfanout, "$(M)$(H)HomeLim:Error") {
 # /// If we are in the middle of setting position, then 
 # /// we don't abort that. 
 # ///
-record(dfanout, "$(M)$(H)HomeLim:Abort") {
+record(dfanout, "$(M)$(H)HomeLimAbort") {
   field(DOL, "1")
   field(OUTA, "$(M)$(H)HomeLim.ABORT PP")
   field(OUTB, "$(M)$(H)HomeLim2.ABORT PP")

@@ -41,19 +41,19 @@ record(sseq, "$(M)$(H)HomeMR") {
   field(LNK3, "$(M)$(H)PMMove.PROC CA")
   field(DLY4, "1")
   field(DOL4, "1")
-  field(LNK4, "$(M)$(H)Lim:Move.PROC CA")
+  field(LNK4, "$(M)$(H)LimMove.PROC CA")
   field(DLY5, "1")
   field(DOL5, "1")
-  field(LNK5, "$(M)$(H)Lim:Check.PROC CA")
+  field(LNK5, "$(M)$(H)LimCheck.PROC CA")
   field(DLY6, "1")
   field(DOL6, "1")
-  field(LNK6, "$(M)$(H)HomeMR:Run.PROC CA")
+  field(LNK6, "$(M)$(H)HomeMRRun.PROC CA")
   field(DLY7, "2")
   field(DOL7, "1")
-  field(LNK7, "$(M)$(H)HomeMR:Check.PROC CA")
+  field(LNK7, "$(M)$(H)HomeMRCheck.PROC CA")
   field(DLY8, "1")
   field(DOL8, "1")
-  field(LNK8, "$(M)$(H)PosSet.PROC CA")
+  field(LNK8, "$(M)$(H)PS.PROC CA")
   field(DLY9, "1")
   field(DOL9, "1")
   field(LNK9, "$(M)$(H)MBMove.PROC CA")
@@ -66,18 +66,18 @@ record(sseq, "$(M)$(H)HomeMR") {
 # ///
 # /// Abort the sseq if we did not see a successful Galil home
 # ///
-record(calcout, "$(M)$(H)HomeMR:Check") {
+record(calcout, "$(M)$(H)HomeMRCheck") {
    field(INPA, "$(M)$(H)HomeBit")
    field(CALC, "(A!=1)?1:0")
    field(OOPT, "When Non-zero")
    field(DOPT, "Use CALC")
-   field(OUT, "$(M)$(H)HomeMR:Error PP")
+   field(OUT, "$(M)$(H)HomeMRError PP")
 }
 
 # ///
 # /// This selects which direction to go (only relevant for the home switch method)
 # ///
-record(bo, "$(M)$(H)HomeMR:Dir") {
+record(bo, "$(M)$(H)HomeMRDir") {
   field(PINI, "YES")
   field(ZNAM, "Positive")
   field(ONAM, "Negative")
@@ -88,16 +88,16 @@ record(bo, "$(M)$(H)HomeMR:Dir") {
 # ///
 # /// Run the controller/driver home sequence (either the HOM0 or HOM1)
 # ///
-record(calcout, "$(M)$(H)HomeMR:Run") {
-   field(INPA, "$(M)$(H)HomeMR:Dir")
+record(calcout, "$(M)$(H)HomeMRRun") {
+   field(INPA, "$(M)$(H)HomeMRDir")
    field(CALC, "A=0")
    field(OOPT, "When Non-zero")
    field(DOPT, "Use CALC")
    field(OUT, "$(M).HOMF PP")
-   field(FLNK, "$(M)$(H)HomeMR:Run2")
+   field(FLNK, "$(M)$(H)HomeMRRun2")
 }
-record(calcout, "$(M)$(H)HomeMR:Run2") {
-   field(INPA, "$(M)$(H)HomeMR:Dir")
+record(calcout, "$(M)$(H)HomeMRRun2") {
+   field(INPA, "$(M)$(H)HomeMRDir")
    field(CALC, "A=1")
    field(OOPT, "When Non-zero")
    field(DOPT, "Use CALC")
@@ -105,20 +105,36 @@ record(calcout, "$(M)$(H)HomeMR:Run2") {
 }
 
 # ///
+# /// Extract the controller/driver home status into a seperate record whenever MSTA changes 
+# ///
+record(calcout, "$(M)$(H)HomeMRStatCalc") {
+  field(PINI, "YES")
+  field(INPA, "$(M).MSTA CP MS")
+  field(CALC, "(A>>14)&0x1")
+  field(OOPT, "Every Time")
+  field(DOPT, "Use CALC")
+  field(OUT, "$(M)$(H)HomeMRStat PP")
+}
+record(bo, "$(M)$(H)HomeMRStat") {
+  field(ZNAM, "Not Homed")
+  field(ONAM, "Homed")
+}
+
+# ///
 # /// Abort the sequence and generate an error. This is not
 # /// a manual abort, and should be not run during a move, 
 # /// so we don't need to stop the motor.
 # ///
-record(dfanout, "$(M)$(H)HomeMR:Error") {
+record(dfanout, "$(M)$(H)HomeMRError") {
   field(DOL, "1")
   field(OUTA, "$(M)$(H)SetError.PROC PP")
-  field(OUTB, "$(M)$(H)HomeMR:Abort.PROC PP")
+  field(OUTB, "$(M)$(H)HomeMRAbort.PROC PP")
 }
 
 # ///
 # /// Abort the sseq record.
 # ///
-record(dfanout, "$(M)$(H)HomeMR:Abort") {
+record(dfanout, "$(M)$(H)HomeMRAbort") {
   field(DOL, "1")
   field(OUTA, "$(M)$(H)HomeMR.ABORT PP")
 }
