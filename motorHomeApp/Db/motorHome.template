@@ -6,10 +6,16 @@
 # 1) Home to a low limit
 # 2) Home to a high limit
 # 3) Home by using the motor record HOMF/HOMR
+# 4) Home by just setting the home position at the current position
+# 5) Home by just setting the motor record offset OFF
 #
 # Method 3) above covers the situations where the controller or driver 
 # takes care of the homing, for example using a home switch or encoder 
 # reference mark.
+# 
+# Method 5) should be used when we are using absolute encoders. In case
+# the controller or driver doesn't support offseting the position, the only
+# way to change the position is to use the OFF field.
 # 
 # Macros:
 # M - Base PV name (should match the motor record)
@@ -45,11 +51,13 @@ record(mbbo, "$(M)$(H)Type")
    field(TWVL, "2")
    field(THVL, "3")
    field(FRVL, "4")
+   field(FVVL, "5")
    field(ZRST, "None")
    field(ONST, "Motor Record")
    field(TWST, "Neg Limit")
    field(THST, "Pos Limit")
-   field(FRST, "Set As Home")
+   field(FRST, "Set Current Pos As Home")
+   field(FVST, "Set Current Pos Using OFF")
 }
 
 # ///
@@ -96,7 +104,7 @@ record(ai, "$(M)$(H)NormalSpeed")
 record(dfanout, "$(M)$(H)RestoreSpeed")
 {
    field(OMSL, "closed_loop")
-   field(DOL, "$(M)$(H):NormalSpeed.VAL")
+   field(DOL, "$(M)$(H)NormalSpeed.VAL")
    field(OUTA, "$(M).VELO PP")
 }
 
@@ -106,7 +114,7 @@ record(dfanout, "$(M)$(H)RestoreSpeed")
 record(dfanout, "$(M)$(H)RestoreNormal") {
    field(DOL, "1")
    field(OUTA, "$(M)$(H)RestoreSpeed.PROC PP")
-   field(OUTB, "$(M)$(H)HLRestore.PROC PP")
+   field(OUTB, "$(M)$(H)LimRestore.PROC PP")
 }
 
 # ///
@@ -294,7 +302,7 @@ record(calcout, "$(M)$(H)MBMovePos") {
 # These homing limits can be adjusted by the user, but are 
 # different (typically wider) than the motor record limits. 
 
-record(bo, "$(M)$(H)HLCtl") {
+record(bo, "$(M)$(H)LimCtl") {
    field(PINI, "YES")
    field(VAL, "0")
    field(ZNAM, "No")
@@ -303,14 +311,14 @@ record(bo, "$(M)$(H)HLCtl") {
    info(autosaveFields_pass0, "VAL")
    info(archive, "Monitor, 00:00:01, VAL")   
 }
-record(ai, "$(M)$(H)HLHigh") {
+record(ai, "$(M)$(H)LimHigh") {
    field(EGU, "$(H_EGU=mm)")
    field(PREC, "$(H_PREC=4)")
    field(ASG, "BEAMLINE")
    info(autosaveFields, "VAL")
    info(archive, "Monitor, 00:00:01, VAL")
 }
-record(ai, "$(M)$(H)HLLow") {
+record(ai, "$(M)$(H)LimLow") {
    field(EGU, "$(H_EGU=mm)")
    field(PREC, "$(H_PREC=4)")
    field(ASG, "BEAMLINE")
@@ -319,68 +327,68 @@ record(ai, "$(M)$(H)HLLow") {
 }
 
 # Store the existing limits
-record(calcout, "$(M)$(H)HLStore") {
-   field(INPA, "$(M)$(H)HLCtl")
+record(calcout, "$(M)$(H)LimStore") {
+   field(INPA, "$(M)$(H)LimCtl")
    field(CALC, "A")
    field(OOPT, "When Non-zero")
-   field(OUT, "$(M)$(H)HLStoreHigh.PROC PP")
+   field(OUT, "$(M)$(H)LimStoreHigh.PROC PP")
 }
-record(ai, "$(M)$(H)HLStoreHigh") {
+record(ai, "$(M)$(H)LimStoreHigh") {
    field(INP, "$(M).DHLM")
    field(EGU, "$(H_EGU=mm)")
    field(PREC, "$(H_PREC=4)")
-   field(FLNK, "$(M)$(H)HLStoreLow")
+   field(FLNK, "$(M)$(H)LimStoreLow")
 }
-record(ai, "$(M)$(H)HLStoreLow") {
+record(ai, "$(M)$(H)LimStoreLow") {
    field(INP, "$(M).DLLM")
    field(EGU, "$(H_EGU=mm)")
    field(PREC, "$(H_PREC=4)")
 }
 
 #Widen the existing limits
-record(calcout, "$(M)$(H)HLWiden") {
-   field(INPA, "$(M)$(H)HLCtl")
+record(calcout, "$(M)$(H)LimWiden") {
+   field(INPA, "$(M)$(H)LimCtl")
    field(CALC, "A")
    field(OOPT, "When Non-zero")
-   field(OUT, "$(M)$(H)HLWidenHigh.PROC PP")
+   field(OUT, "$(M)$(H)LimWidenHigh.PROC PP")
 }
-record(calcout, "$(M)$(H)HLWidenHigh") {
-   field(INPA, "$(M)$(H)HLHigh")
+record(calcout, "$(M)$(H)LimWidenHigh") {
+   field(INPA, "$(M)$(H)LimHigh")
    field(CALC, "A")
    field(OUT, "$(M).DHLM PP")
-   field(FLNK, "$(M)$(H)HLWidenLow")
+   field(FLNK, "$(M)$(H)LimWidenLow")
 }
-record(calcout, "$(M)$(H)HLWidenLow") {
-   field(INPA, "$(M)$(H)HLLow")
+record(calcout, "$(M)$(H)LimWidenLow") {
+   field(INPA, "$(M)$(H)LimLow")
    field(CALC, "A")
    field(OUT, "$(M).DLLM PP")
 }
 
 #Helper record to save, then widen
-record(seq, "$(M)$(H)HLStoreWiden") {
+record(seq, "$(M)$(H)LimStoreWiden") {
   field(DLY1, "0.0")
   field(DOL1, "1")
-  field(LNK1, "$(M)$(H)HLStore.PROC PP")
+  field(LNK1, "$(M)$(H)LimStore.PROC PP")
   field(DLY2, "0.5")
   field(DOL2, "1")
-  field(LNK2, "$(M)$(H)HLWiden.PROC PP")
+  field(LNK2, "$(M)$(H)LimWiden.PROC PP")
 }
 
 #Restore the saved limits
-record(calcout, "$(M)$(H)HLRestore") {
-   field(INPA, "$(M)$(H)HLCtl")
+record(calcout, "$(M)$(H)LimRestore") {
+   field(INPA, "$(M)$(H)LimCtl")
    field(CALC, "A")
    field(OOPT, "When Non-zero")
-   field(OUT, "$(M)$(H)HLRestoreHigh.PROC PP")
+   field(OUT, "$(M)$(H)LimRestoreHigh.PROC PP")
 }
-record(calcout, "$(M)$(H)HLRestoreHigh") {
-   field(INPA, "$(M)$(H)HLStoreHigh")
+record(calcout, "$(M)$(H)LimRestoreHigh") {
+   field(INPA, "$(M)$(H)LimStoreHigh")
    field(CALC, "A")
    field(OUT, "$(M).DHLM PP")
-   field(FLNK, "$(M)$(H)HLRestoreLow")
+   field(FLNK, "$(M)$(H)LimRestoreLow")
 }
-record(calcout, "$(M)$(H)HLRestoreLow") {
-   field(INPA, "$(M)$(H)HLStoreLow")
+record(calcout, "$(M)$(H)LimRestoreLow") {
+   field(INPA, "$(M)$(H)LimStoreLow")
    field(CALC, "A")
    field(OUT, "$(M).DLLM PP")
 }
@@ -486,6 +494,20 @@ record(bo, "$(M)$(H)DirReverse")
 
 ##################################################################
 
+# ///
+# /// For some of the sequences we always do these fast operations
+# /// to store settings or widen limits.
+# /// Process $(M)$(H)NormalSpeed
+# /// Process $(M)$(H)MBStored
+# /// Process $(M)$(H)LimStoreWiden
+# ///
+record(dfanout, $(M)$(H)HomeInit") {
+  field(VAL, "1")
+  field(OUTA, "$(M)$(H)MBStored.PROC PP")
+  field(OUTB, "$(M)$(H)LimStoreWiden.PROC PP")
+  field(OUTC, "$(M)$(H)NormalSpeed.PROC PP")
+} 
+
 ##################################################################
 # Sequence to home on high limit
 
@@ -509,31 +531,28 @@ record(sseq, "$(M)$(H)HomeHL") {
    field(LNK1, "$(M)$(H)HomeHL:Status.VAL CA")
    field(DLY2, "0")
    field(DOL2, "1")
-   field(LNK2, "$(M)$(H)MBStore.PROC CA")
-   field(DLY3, "0")
+   field(LNK2, "$(M)$(H)HomeInit.PROC CA")
+   field(DLY3, "1")
    field(DOL3, "1")
-   field(LNK3, "$(M)$(H)HLStoreWiden.PROC CA")
+   field(LNK3, "$(M)$(H)PMMove.PROC CA")
    field(DLY4, "1")
    field(DOL4, "1")
-   field(LNK4, "$(M)$(H)PMMove.PROC CA")
+   field(LNK4, "$(M)$(H)HomeHL:Move.PROC CA")
    field(DLY5, "1")
    field(DOL5, "1")
-   field(LNK5, "$(M)$(H)HomeHL:Move.PROC CA")
-   field(DLY6, "1")
+   field(LNK5, "$(M)$(H)HomeHL:Check.PROC CA")
+   field(DLY6, "0")
    field(DOL6, "1")
-   field(LNK6, "$(M)$(H)HomeHL:Check.PROC CA")
+   field(LNK6, "$(M)$(H)HomeHL:Backoff.PROC CA")
    field(DLY7, "0")
-   field(DOL7, "1")
-   field(LNK7, "$(M)$(H)HomeHL:Backoff.PROC CA")
-   field(DLY8, "0")
-   field(DOL8, "$(M)$(H)Speed.VAL")
-   field(LNK8, "$(M).VELO CA")
-   field(DLY9, "1")
+   field(DOL7, "$(M)$(H)Speed.VAL")
+   field(LNK7, "$(M).VELO CA")
+   field(DLY8, "1")
+   field(DOL8, "1")
+   field(LNK8, "$(M)$(H)HomeHL:Move.PROC CA")
+   field(DLY9, "0")
    field(DOL9, "1")
-   field(LNK9, "$(M)$(H)HomeHL:Move.PROC CA")
-   field(DLYA, "0")
-   field(DOLA, "1")
-   field(LNKA, "$(M)$(H)HomeHL2.PROC CA")
+   field(LNK9, "$(M)$(H)HomeHL2.PROC CA")
    field(FLNK, "$(M)$(H)RestoreNormal")
 }
 record(sseq, "$(M)$(H)HomeHL2") {
@@ -562,7 +581,8 @@ record(sseq, "$(M)$(H)HomeHL2") {
 # ///
 # /// Move to the high limit. This calculation also figures out if we
 # /// need to use the reverse limits due to a negative MRES, and if we need
-# /// to take into account backlash correction. 
+# /// to take into account backlash correction. If we are already on the 
+# /// appropriate limit then we don't move.
 # ///
 record(calcout, "$(M):HomeHL:Move")
 {
@@ -605,7 +625,7 @@ record(calcout, "$(M)$(H)HomeHL:Check") {
 }
 
 # ///
-# /// High limit home status flag
+# /// High limit home status
 # ///
 record(mbbo, "$(M)$(H)HomeHL:Status") {
    field(DTYP, "Soft Channel")
@@ -667,10 +687,8 @@ record(dfanout, "$(M)$(H)HomeHL:Abort") {
   field(OUTD, "$(M).STOP PP")
 }
 
-
-#######################################################
+##################################################################
 # Sequence to home on low limit
-#######################################################
 
 # ///
 # /// Record to home to the low limit.
@@ -693,31 +711,28 @@ record(sseq, "$(M)$(H)HomeLL")
    field(LNK1, "$(M)$(H)HomeLL:Status.VAL CA")
    field(DLY2, "0")
    field(DOL2, "1")
-   field(LNK2, "$(M)$(H)MBStore.PROC CA")
-   field(DLY3, "0")
+   field(LNK2, "$(M)$(H)HomeInit.PROC CA")
+   field(DLY3, "1")
    field(DOL3, "1")
-   field(LNK3, "$(M)$(H)HLStoreWiden.PROC CA")
+   field(LNK3, "$(M)$(H)PMMove.PROC CA")
    field(DLY4, "1")
    field(DOL4, "1")
-   field(LNK4, "$(M)$(H)PMMove.PROC CA")
+   field(LNK4, "$(M)$(H)HomeLL:Move.PROC CA")
    field(DLY5, "1")
    field(DOL5, "1")
-   field(LNK5, "$(M)$(H)HomeLL:Move.PROC CA")
-   field(DLY6, "1")
+   field(LNK5, "$(M)$(H)HomeLL:Check.PROC CA")
+   field(DLY6, "0")
    field(DOL6, "1")
-   field(LNK6, "$(M)$(H)HomeLL:Check.PROC CA")
+   field(LNK6, "$(M)$(H)HomeLL:Backoff.PROC CA")
    field(DLY7, "0")
-   field(DOL7, "1")
-   field(LNK7, "$(M)$(H)HomeLL:Backoff.PROC CA")
-   field(DLY8, "0")
-   field(DOL8, "$(M)$(H)Speed.VAL")
-   field(LNK8, "$(M).VELO CA")
-   field(DLY9, "1")
+   field(DOL7, "$(M)$(H)Speed.VAL")
+   field(LNK7, "$(M).VELO CA")
+   field(DLY8, "1")
+   field(DOL8, "1")
+   field(LNK8, "$(M)$(H)HomeLL:Move.PROC CA")
+   field(DLY9, "0")
    field(DOL9, "1")
-   field(LNK9, "$(M)$(H)HomeLL:Move.PROC CA")
-   field(DLYA, "0")
-   field(DOLA, "1")
-   field(LNKA, "$(M)$(H)HomeLL2.PROC CA")
+   field(LNK9, "$(M)$(H)HomeLL2.PROC CA")
    field(FLNK, "$(M)$(H)RestoreNormal")
 }
 record(sseq, "$(M)$(H)HomeLL2") {
@@ -789,7 +804,7 @@ record(calcout, "$(M)$(H)HomeLL:Check") {
 }
 
 # ///
-# /// Low limit home status flag
+# /// Low limit home status
 # ///
 record(mbbo, "$(M)$(H)HomeLL:Status") {
    field(DTYP, "Soft Channel")
@@ -852,11 +867,10 @@ record(dfanout, "$(M)$(H)HomeLL:Abort") {
 }
 
 
-###############################################################
-
-###############################################################
-# Sequence to execute the motor record home routine and set the home position
-###############################################################
+##################################################################
+# Sequence to home using the motor record HOMF or HOMR fields.
+# Typically this will run a home sequence in the driver or on 
+# the controller.
 
 # ///
 # /// Record to run the motor record home routine (HOMR or HOMF)
@@ -878,33 +892,30 @@ record(sseq, "$(M)$(H)HomeMR")
    field(LNK1, "$(M)$(H)HomeMR:Status.VAL CA")
    field(DLY2, "0")
    field(DOL2, "1")
-   field(LNK2, "$(M)$(H)HomeMBStore.PROC CA")
-   field(DLY3, "0")
+   field(LNK2, "$(M)$(H)HomeInit.PROC CA")
+   field(DLY3, "1")
    field(DOL3, "1")
-   field(LNK3, "$(M)$(H)HomeLimit:SW.PROC CA") 
+   field(LNK3, "$(M)$(H)PMMove.PROC CA")
    field(DLY4, "1")
    field(DOL4, "1")
-   field(LNK4, "$(M)$(H)HomePMMove.PROC CA")
-   field(DLY5, "1")
+   field(LNK4, "$(M)$(H)HomeMR:Run.PROC CA")
+   field(DLY5, "2")
    field(DOL5, "1")
-   field(LNK5, "$(M)$(H)HomeMR:Run.PROC CA")
-   field(DLY6, "2")
+   field(LNK5, "$(M)$(H)HomeMR:Check.PROC CA")
+   field(DLY6, "1")
    field(DOL6, "1")
-   field(LNK6, "$(M)$(H)HomeMR:Check.PROC CA")
+   field(LNK6, "$(M)$(H)PosSet.PROC CA")
    field(DLY7, "1")
    field(DOL7, "1")
-   field(LNK7, "$(M)$(H)PosSet.PROC CA")
-   field(DLY8, "1")
-   field(DOL8, "1")
-   field(LNK8, "$(M)$(H)HomeMBMove.PROC CA")
-   field(DLY9, "0")
-   field(DOL9, "0")
-   field(LNK9, "$(M)$(H)HomeMR:Status.VAL CA")
-   field(FLNK, "$(M)$(H)HomeLimit:Restore")
+   field(LNK7, "$(M)$(H)MBMove.PROC CA")
+   field(DLY8, "0")
+   field(DOL8, "0")
+   field(LNK8, "$(M)$(H)HomeMR:Status.VAL CA")
+   field(FLNK, "$(M)$(H)RestoreNormal")
 }
 
 # ///
-# /// Galil home status flag
+# /// Home status flag
 # ///
 record(mbbo, "$(M)$(H)HomeMR:Status") {
    field(DTYP, "Soft Channel")
