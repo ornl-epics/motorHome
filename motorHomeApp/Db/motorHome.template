@@ -1,0 +1,1038 @@
+##################################################################
+#
+# Template to provide a set of records to aid in homing
+# any motor record axis. Several homing methods are supported:
+#
+# 1) Home to a low limit
+# 2) Home to a high limit
+# 3) Home by using the motor record HOMF/HOMR
+#
+# Method 3) above covers the situations where the controller or driver 
+# takes care of the homing, for example using a home switch or encoder 
+# reference mark.
+# 
+# Macros:
+# M - Base PV name (should match the motor record)
+# H - Second part of the PV names (eg. :Home:)
+# H_TYPE - Home type (See $(M)$(H)Type record for options)
+# H_POS - Home position to set at end of home sequence. 
+# H_SPEED - Home speed. This is used when approching a limit switch 
+#           (after we initially found it and have already moved off the switch)
+# H_BACKOFF - Home backoff. The distance to move off a limit switch. The sign is important.
+# H_EGU - Units string (default=mm)
+# H_PREC - Display precision (default=4)
+#
+# Matt Pearson
+# ORNL
+# 
+# March 2019
+#
+##################################################################
+
+##################################################################
+# Record to store homing information
+##################################################################
+
+# ///
+# /// Home type
+# ///
+record(mbbo, "$(M)$(H)Type")
+{
+   field(PINI, "YES")
+   field(VAL, "$(H_TYPE=0)")
+   field(ZRVL, "0")
+   field(ONVL, "1")
+   field(TWVL, "2")
+   field(THVL, "3")
+   field(FRVL, "4")
+   field(ZRST, "None")
+   field(ONST, "Motor Record")
+   field(TWST, "Neg Limit")
+   field(THST, "Pos Limit")
+   field(FRST, "Set As Home")
+}
+
+# ///
+# /// Home offset position
+# ///
+record(ao, "$(M)$(H)Pos")
+{
+   field(PINI, "YES")
+   field(VAL, "$(H_POS=0)")
+   field(EGU, "$(H_EGU=mm)")
+   field(PREC, "$(H_PREC=4)")
+   field(ASG, "BEAMLINE")
+   info(archive, "Monitor, 00:00:01, VAL")   
+}
+
+# ///
+# /// Home speed when homing to a limit (defaults to 0.1)
+# /// We use the existing VELO to drive to the limit
+# /// initially, then back off, then use this home speed
+# /// to find the limit again.
+# ///
+record(ao, "$(M)$(H)Speed")
+{
+   field(PINI, "YES")
+   field(VAL, "$(H_SPEED=0.1)")
+   field(PREC, "$(H_PREC=4)")
+}
+
+# ///
+# /// Record to store the normal VELO speed
+# ///
+record(ai, "$(M)$(H)NormalSpeed")
+{
+   field(PINI, "YES")
+   field(INP, "$(M).VELO")
+   field(PREC, "$(H_PREC=4)")
+   info(archive, "Monitor, 00:00:01, VAL")
+}
+
+# ///
+# /// Set the speed back to the normal speed at the 
+# /// end of a sequence. This is only used for limit switch homes.
+# ///
+record(dfanout, "$(M)$(H)RestoreSpeed")
+{
+   field(OMSL, "closed_loop")
+   field(DOL, "$(M)$(H):NormalSpeed.VAL")
+   field(OUTA, "$(M).VELO PP")
+}
+
+# ///
+# /// Restore normal speed and restore normal software limits
+# ///
+record(dfanout, "$(M)$(H)RestoreNormal") {
+   field(DOL, "1")
+   field(OUTA, "$(M)$(H)RestoreSpeed.PROC PP")
+   field(OUTB, "$(M)$(H)HLRestore.PROC PP")
+}
+
+# ///
+# /// Home backoff distance (defaults to 1)
+# /// This is only used for limit switch homes.
+# ///
+record(ao, "$(M)$(H)Backoff")
+{
+   field(PINI, "YES")
+   field(VAL, "$(H_BACKOFF=1)")
+   field(EGU, "$(H_EGU=mm)")
+   field(PREC, "$(H_PREC=4)")
+}
+
+# ///
+# /// Extract the controller/driver home status into a seperate record whenever MSTA changes 
+# ///
+record(calcout, "$(M)$(H)HomeStatCalc")
+{
+   field(PINI, "YES")
+   field(INPA, "$(M).MSTA CP MS")
+   field(CALC, "(A>>14)&0x1")
+   field(OOPT, "Every Time")
+   field(DOPT, "Use CALC")
+   field(OUT, "$(M)$(H)HomeStat PP")
+}
+record(bo, "$(M)$(H)HomeStat")
+{
+   field(ZNAM, "Not Homed")
+   field(ONAM, "Homed")
+}
+
+##################################################################
+# Logic that deals with a pre-home move (PM) , either to a defined 
+# position or a relative move.
+
+record(mbbo, "$(M)$(H)PMCtl") {
+   field(PINI, "YES")
+   field(VAL, "0")
+   field(ZRVL, "0")
+   field(ONVL, "1")
+   field(TWVL, "1")
+   field(ZRST, "Disabled")
+   field(ONST, "Absolute Position")
+   field(TWST, "Relative Position")
+   field(ASG, "BEAMLINE")
+   info(autosaveFields, "VAL")
+   info(archive, "Monitor, 00:00:01, VAL")   
+}
+
+# ///
+# /// The position that will be moved to (either absolute or relative)
+# ///
+record(ao, "$(M)$(H)PMPos") {
+   field(PINI, "YES")
+   field(VAL, "0.0")
+   field(EGU, "$(H_EGU=mm)")
+   field(PREC, "$(H_PREC=4)")
+   field(ASG, "BEAMLINE")
+   info(autosaveFields, "VAL")
+   info(archive, "Monitor, 00:00:01, VAL")   
+}
+
+# ///
+# /// Do the pre-home move, depending on the selected method
+# ///
+record(calcout, "$(M)$(H)PMMove") {
+   field(INPA, "$(M)$(H)PMCtl")
+   field(INPB, "$(M)$(H)PMPos")
+   field(CALC, "A==1")
+   field(OOPT, "When Non-zero")
+   field(DOPT, "Use OCAL")
+   field(OCAL, "B")
+   field(OUT, "$(M) PP")
+   field(FLNK, "$(M)$(H)PMMove2")
+}
+record(calcout, "$(M)$(H)PMMove2") {
+   field(INPA, "$(M)$(H)PMCtl")
+   field(INPB, "$(M)$(H)PMPos")
+   field(INPC, "$(M).RBV")
+   field(CALC, "A==2")
+   field(OOPT, "When Non-zero")
+   field(DOPT, "Use OCAL")
+   field(OCAL, "B+C")
+   field(OUT, "$(M) PP")
+}
+
+# ///
+# /// Manually move to the defned pre-home position
+# ///
+record(calcout, "$(M)$(H)PMMoveMan") {
+   field(INPA, "$(M)$(H)PMPos")
+   field(CALC, "A")
+   field(OOPT, "Every Time")
+   field(DOPT, "Use CALC")
+   field(OUT, "$(M) PP")
+}
+
+##################################################################
+# Logic that enables moving back (MB) to original position, or a 
+# defined position, after homing.
+
+record(mbbo, "$(M)$(H)MBCtl") {
+   field(PINI, "YES")
+   field(VAL, "0")
+   field(ZRVL, "0")
+   field(ONVL, "1")
+   field(TWVL, "1")
+   field(ZRST, "Disabled")
+   field(ONST, "Pre-Home Position")
+   field(TWST, "Defined Position")
+   field(ASG, "BEAMLINE")
+   info(autosaveFields, "VAL")
+   info(archive, "Monitor, 00:00:01, VAL")   
+}
+
+# ///
+# /// Store the pre-home position
+# ///
+record(ai, "$(M)$(H)MBStored") {
+   field(INP, "$(M).RBV")
+   field(EGU, "$(H_EGU=mm)")
+   field(PREC, "$(H_PREC=4)")
+   info(archive, "Monitor, 00:00:01, VAL")   
+}
+
+# ///
+# /// Used to manually define a position to move back to
+# ///
+record(ao, "$(M)$(H)MBPos") {
+   field(PINI, "YES")
+   field(VAL, "0.0")
+   field(EGU, "$(H_EGU=mm)")
+   field(PREC, "$(H_PREC=4)")
+   field(ASG, "BEAMLINE")
+   info(autosaveFields, "VAL")
+   info(archive, "Monitor, 00:00:01, VAL")   
+}
+# ///
+# /// This either moves back to the last pre-home position or a defined position,
+# /// depending on the selected method.
+# ///
+record(calcout, "$(M)$(H)MBMove") {
+   field(INPA, "$(M)$(H)MBCtl")
+   field(INPB, "$(M)$(H)MBStored")
+   field(CALC, "A==1")
+   field(OOPT, "When Non-zero")
+   field(DOPT, "Use OCAL")
+   field(OCAL, "B")
+   field(OUT, "$(M) PP")
+   field(FLNK, "$(M)$(H)MBMove2")
+}
+record(calcout, "$(M)$(H)MBMove2") {
+   field(INPA, "$(M)$(H)MBCtl")
+   field(INPB, "$(M)$(H)MBPos")
+   field(CALC, "A==2")
+   field(OOPT, "When Non-zero")
+   field(DOPT, "Use OCAL")
+   field(OCAL, "B")
+   field(OUT, "$(M) PP")
+}
+# ///
+# /// Manually move back to the pre-home position
+# ///
+record(calcout, "$(M)$(H)MBMoveStored") {
+   field(INPA, "$(M)$(H)MBStored")
+   field(CALC, "A")
+   field(OOPT, "Every Time")
+   field(DOPT, "Use CALC")
+   field(OUT, "$(M) PP")
+}
+# ///
+# /// Manually move back to a defined position.
+# ///
+record(calcout, "$(M)$(H)MBMovePos") {
+   field(INPA, "$(M)$(H)MBPos")
+   field(CALC, "A")
+   field(OOPT, "Every Time")
+   field(DOPT, "Use CALC")
+   field(OUT, "$(M) PP")
+}
+
+##################################################################
+# Logic to deal with widening and restoring software limits. 
+# These homing limits can be adjusted by the user, but are 
+# different (typically wider) than the motor record limits. 
+
+record(bo, "$(M)$(H)HLCtl") {
+   field(PINI, "YES")
+   field(VAL, "0")
+   field(ZNAM, "No")
+   field(ONAM, "Yes")
+   field(ASG, "BEAMLINE")
+   info(autosaveFields_pass0, "VAL")
+   info(archive, "Monitor, 00:00:01, VAL")   
+}
+record(ai, "$(M)$(H)HLHigh") {
+   field(EGU, "$(H_EGU=mm)")
+   field(PREC, "$(H_PREC=4)")
+   field(ASG, "BEAMLINE")
+   info(autosaveFields, "VAL")
+   info(archive, "Monitor, 00:00:01, VAL")
+}
+record(ai, "$(M)$(H)HLLow") {
+   field(EGU, "$(H_EGU=mm)")
+   field(PREC, "$(H_PREC=4)")
+   field(ASG, "BEAMLINE")
+   info(autosaveFields, "VAL")
+   info(archive, "Monitor, 00:00:01, VAL")
+}
+
+# Store the existing limits
+record(calcout, "$(M)$(H)HLStore") {
+   field(INPA, "$(M)$(H)HLCtl")
+   field(CALC, "A")
+   field(OOPT, "When Non-zero")
+   field(OUT, "$(M)$(H)HLStoreHigh.PROC PP")
+}
+record(ai, "$(M)$(H)HLStoreHigh") {
+   field(INP, "$(M).DHLM")
+   field(EGU, "$(H_EGU=mm)")
+   field(PREC, "$(H_PREC=4)")
+   field(FLNK, "$(M)$(H)HLStoreLow")
+}
+record(ai, "$(M)$(H)HLStoreLow") {
+   field(INP, "$(M).DLLM")
+   field(EGU, "$(H_EGU=mm)")
+   field(PREC, "$(H_PREC=4)")
+}
+
+#Widen the existing limits
+record(calcout, "$(M)$(H)HLWiden") {
+   field(INPA, "$(M)$(H)HLCtl")
+   field(CALC, "A")
+   field(OOPT, "When Non-zero")
+   field(OUT, "$(M)$(H)HLWidenHigh.PROC PP")
+}
+record(calcout, "$(M)$(H)HLWidenHigh") {
+   field(INPA, "$(M)$(H)HLHigh")
+   field(CALC, "A")
+   field(OUT, "$(M).DHLM PP")
+   field(FLNK, "$(M)$(H)HLWidenLow")
+}
+record(calcout, "$(M)$(H)HLWidenLow") {
+   field(INPA, "$(M)$(H)HLLow")
+   field(CALC, "A")
+   field(OUT, "$(M).DLLM PP")
+}
+
+#Helper record to save, then widen
+record(seq, "$(M)$(H)HLStoreWiden") {
+  field(DLY1, "0.0")
+  field(DOL1, "1")
+  field(LNK1, "$(M)$(H)HLStore.PROC PP")
+  field(DLY2, "0.5")
+  field(DOL2, "1")
+  field(LNK2, "$(M)$(H)HLWiden.PROC PP")
+}
+
+#Restore the saved limits
+record(calcout, "$(M)$(H)HLRestore") {
+   field(INPA, "$(M)$(H)HLCtl")
+   field(CALC, "A")
+   field(OOPT, "When Non-zero")
+   field(OUT, "$(M)$(H)HLRestoreHigh.PROC PP")
+}
+record(calcout, "$(M)$(H)HLRestoreHigh") {
+   field(INPA, "$(M)$(H)HLStoreHigh")
+   field(CALC, "A")
+   field(OUT, "$(M).DHLM PP")
+   field(FLNK, "$(M)$(H)HLRestoreLow")
+}
+record(calcout, "$(M)$(H)HLRestoreLow") {
+   field(INPA, "$(M)$(H)HLStoreLow")
+   field(CALC, "A")
+   field(OUT, "$(M).DLLM PP")
+}
+
+##################################################################
+# Sequence to aid in setting the position to the home position. 
+
+# ///
+# /// Seq to aid in setting the home offset position
+# /// The existing user offset is preserved to deal with
+# /// the motor record variable offset feature.
+# ///
+record(seq, "$(M)$(H)PosSet") {	
+   field(DLY1, "0")
+   field(DOL1, "$(M).OFF")
+   field(LNK1, "$(M)$(H)OffStore PP")
+   field(DLY2, "0")
+   field(DOL2, "$(M).RBV")
+   field(LNK2, "$(M)$(H)RBVStore PP")
+   field(DLY3, "1")
+   field(DOL3, "1")
+   field(LNK3, "$(M).SET PP")
+   field(DLY4, "1")
+   field(DOL4, "$(M)$(H)Pos")
+   field(LNK4, "$(M).DVAL PP")
+   field(DLY5, "2")
+   field(DOL5, "$(M)$(H)OffStore")
+   field(LNK5, "$(M).OFF PP")
+   field(DLY6, "1")
+   field(DOL6, "0")
+   field(LNK6, "$(M).SET PP")
+   field(DLY7, "0")
+   field(DOL7, "0")
+   field(LNK7, "$(M)$(H)OffStore PP")
+   field(DLY8, "1")
+   field(DOL8, "1")
+   field(LNK8, "$(M)$(H)RBVChangeCalc.PROC PP")
+   field(FLNK, "$(M)$(H)PosSetCounter")
+}
+
+# ///
+# /// Stored OFF field. This is used by $(M)$(H)PosSet
+# /// to store the OFF during the set position procedure. 
+# /// It is set back to zero at the end of the PosSet sequence.
+# ///
+record(ao, "$(M)$(H)OffStore") {
+   info(archive, "Monitor, 00:00:01, VAL")
+}
+
+# ///
+# /// Record to store the RBV field before the sequence.
+# /// After the set position seq has completed, we calculate the change
+# /// in position so we can report the offset to the user.
+# ///
+record(ao, "$(M)$(H)RBVStore") {
+   info(archive, "Monitor, 00:00:01, VAL")
+}
+record(calcout, "$(M)$(H)RBVChangeCalc") {
+   field(INPA, "$(M)$(H)RBVStore")
+   field(INPB, "$(M).RBV")
+   field(CALC, "B-A")
+   field(OOPT, "Every Time")
+   field(DOPT, "Use CALC")
+   field(OUT, "$(M)$(H)RBVChange PP")
+}
+record(ao, "$(M)$(H)RBVChange") {
+   field(EGU, "$(H_EGU=mm)")
+   field(PREC, "$(H_PREC=4)")
+   info(autosaveFields, "VAL")
+   info(archive, "Monitor, 00:00:01, VAL")
+}
+
+# ///
+# /// Number of times this axis has had the position set
+# ///
+record(calc, "$(M)$(H)PosSetCounter") {
+   field(INPA, "$(M)$(H)PosSetCounter.VAL")
+   field(CALC, "A+1")
+   info(autosaveFields, "VAL")
+   info(archive, "Monitor, 00:00:01, VAL")
+}
+
+##################################################################
+
+# ///
+# /// Figure out if the software limits are inverted for
+# /// this axis (ie. if we have negative MRES)
+# ///
+record(calcout, "$(M)$(H)DirReverseCalc")
+{
+   field(PINI, "YES")
+   field(INPA, "$(M).MRES")
+   field(CALC, "A<0")
+   field(OOPT, "Every Time")
+   field(DOPT, "Use CALC")
+   field(OUT, "$(M)$(H)DirReverse PP")
+}
+record(bo, "$(M)$(H)DirReverse")
+{
+   field(ZNAM, "Not Reversed")
+   field(ONAM, "Reversed")
+}
+
+##################################################################
+
+##################################################################
+# Sequence to home on high limit
+
+# ///
+# /// Record to home to the high limit.
+# /// If we don't see the high limit, we abort.
+# ///
+record(sseq, "$(M)$(H)HomeHL") {
+   field(WAIT1, "Wait")
+   field(WAIT2, "Wait")
+   field(WAIT3, "Wait")
+   field(WAIT4, "Wait")
+   field(WAIT5, "Wait")
+   field(WAIT6, "Wait")
+   field(WAIT7, "Wait")
+   field(WAIT8, "Wait")
+   field(WAIT9, "Wait")
+   field(WAITA, "Wait")
+   field(DLY1, "0")
+   field(DOL1, "1")
+   field(LNK1, "$(M)$(H)HomeHL:Status.VAL CA")
+   field(DLY2, "0")
+   field(DOL2, "1")
+   field(LNK2, "$(M)$(H)MBStore.PROC CA")
+   field(DLY3, "0")
+   field(DOL3, "1")
+   field(LNK3, "$(M)$(H)HLStoreWiden.PROC CA")
+   field(DLY4, "1")
+   field(DOL4, "1")
+   field(LNK4, "$(M)$(H)PMMove.PROC CA")
+   field(DLY5, "1")
+   field(DOL5, "1")
+   field(LNK5, "$(M)$(H)HomeHL:Move.PROC CA")
+   field(DLY6, "1")
+   field(DOL6, "1")
+   field(LNK6, "$(M)$(H)HomeHL:Check.PROC CA")
+   field(DLY7, "0")
+   field(DOL7, "1")
+   field(LNK7, "$(M)$(H)HomeHL:Backoff.PROC CA")
+   field(DLY8, "0")
+   field(DOL8, "$(M)$(H)Speed.VAL")
+   field(LNK8, "$(M).VELO CA")
+   field(DLY9, "1")
+   field(DOL9, "1")
+   field(LNK9, "$(M)$(H)HomeHL:Move.PROC CA")
+   field(DLYA, "0")
+   field(DOLA, "1")
+   field(LNKA, "$(M)$(H)HomeHL2.PROC CA")
+   field(FLNK, "$(M)$(H)RestoreNormal")
+}
+record(sseq, "$(M)$(H)HomeHL2") {
+   field(WAIT1, "Wait")
+   field(WAIT2, "Wait")
+   field(WAIT3, "Wait")
+   field(WAIT4, "Wait")
+   field(WAIT5, "Wait")
+   field(DLY1, "1")
+   field(DOL1, "1")
+   field(LNK1, "$(M)$(H)HomeHL:Check.PROC CA")
+   field(DLY2, "0")
+   field(DOL2, "1")
+   field(LNK2, "$(M)$(H)RestoreSpeed.PROC CA")
+   field(DLY3, "1")
+   field(DOL3, "1")
+   field(LNK3, "$(M)$(H)PosSet.PROC CA")
+   field(DLY4, "1")
+   field(DOL4, "1")
+   field(LNK4, "$(M)$(H)MBMove.PROC CA")
+   field(DLY5, "0")
+   field(DOL5, "0")
+   field(LNK5, "$(M)$(H)HomeHL:Status.VAL CA")
+}
+
+# ///
+# /// Move to the high limit. This calculation also figures out if we
+# /// need to use the reverse limits due to a negative MRES, and if we need
+# /// to take into account backlash correction. 
+# ///
+record(calcout, "$(M):HomeHL:Move")
+{
+   field(INPA, "$(M):HomeDirReverse")
+   field(INPB, "$(M).DHLM")
+   field(INPC, "$(M).DLLM")
+   field(INPD, "$(M).BDST")
+   field(INPE, "$(M).RHLS")
+   field(INPF, "$(M).RLLS")
+   field(CALC, "A=1?(F!=1):(E!=1)")
+   field(OOPT, "When Non-zero")
+   field(DOPT, "Use OCAL")
+   field(OCAL, "A=1?((D>0)?C+D:C):((D>0)?B:B+D)")
+   field(OUT, "$(M).DVAL PP")
+}
+
+# ///
+# /// Move the motor a distance equal to the HomeBackoff value
+# ///
+record(calcout, "$(M)$(H)HomeHL:Backoff")
+{
+   field(INPA, "$(M)$(H)Backoff")
+   field(INPB, "$(M).RBV")
+   field(INPC, "$(M)$(H)DirReverse")
+   field(CALC, "(C=1)?(B+A):(B-A)")
+   field(OOPT, "Every Time")
+   field(DOPT, "Use CALC")
+   field(OUT, "$(M).VAL PP")
+}
+
+# ///
+# /// Abort the sseq if we are not on the high limit
+# ///
+record(calcout, "$(M)$(H)HomeHL:Check") {
+   field(INPA, "$(M).RHLS")
+   field(CALC, "(A!=1)?1:0")
+   field(OOPT, "When Non-zero")
+   field(DOPT, "Use CALC")
+   field(OUT, "$(M)$(H)HomeHL:Error PP")
+}
+
+# ///
+# /// High limit home status flag
+# ///
+record(mbbo, "$(M)$(H)HomeHL:Status") {
+   field(DTYP, "Soft Channel")
+   field(VAL,  "0")
+   field(PINI, "YES")
+   field(ZRST, "Idle")
+   field(ONST, "Running")
+   field(TWST, "Error")
+   field(THST, "Aborted")
+   field(ZRSV, "NO_ALARM")
+   field(ONSV, "NO_ALARM")
+   field(TWSV, "MAJOR")
+   field(THSV, "MINOR")
+   info(archive, "Monitor, 00:00:01, VAL")      
+}
+
+# ///
+# /// Set the status flag to Error
+# ///
+record(longout, "$(M)$(H)HomeHL:SetError") {
+   field(DTYP, "Soft Channel")
+   field(VAL, "2")
+   field(OUT, "$(M)$(H)HomeHL:Status.VAL PP")
+}
+
+# ///
+# /// Set the status flag to Aborted, if we are running the seq
+# ///
+record(calcout, "$(M)$(H)HomeHL:SetAborted") {
+   field(INPA, "$(M)$(H)HomeHL:Status")
+   field(CALC, "A=1?3:0")
+   field(OOPT, "When Non-zero")
+   field(DOPT, "Use CALC")
+   field(OUT, "$(M)$(H)HomeHL:Status.VAL PP")
+}
+
+# ///
+# /// Abort the sequence. This is not
+# /// a manual abort, and should be not run
+# /// during a move, so we don't need to stop the motor.
+# ///
+record(dfanout, "$(M)$(H)HomeHL:Error") {
+  field(DOL, "1")
+  field(OUTA, "$(M)$(H)HomeHL:SetError.PROC PP")
+  field(OUTB, "$(M)$(H)HomeHL.ABORT PP")
+}
+
+# ///
+# /// This is triggered by a manual abort.
+# /// It stops the sequences and sets the status.
+# /// If we are in the middle of setting position, then 
+# /// we don't abort that. 
+# ///
+record(dfanout, "$(M)$(H)HomeHL:Abort") {
+  field(DOL, "1")
+  field(OUTA, "$(M)$(H)HomeHL:SetAborted.PROC PP")
+  field(OUTB, "$(M)$(H)HomeHL.ABORT PP")
+  field(OUTC, "$(M)$(H)HomeHL2.ABORT PP")
+  field(OUTD, "$(M).STOP PP")
+}
+
+
+#######################################################
+# Sequence to home on low limit
+#######################################################
+
+# ///
+# /// Record to home to the low limit.
+# /// If we don't see the low limit, we abort. 
+# ///
+record(sseq, "$(M)$(H)HomeLL")
+{
+   field(WAIT1, "Wait")
+   field(WAIT2, "Wait")
+   field(WAIT3, "Wait")
+   field(WAIT4, "Wait")
+   field(WAIT5, "Wait")
+   field(WAIT6, "Wait")
+   field(WAIT7, "Wait")
+   field(WAIT8, "Wait")
+   field(WAIT9, "Wait")
+   field(WAITA, "Wait")
+   field(DLY1, "0")
+   field(DOL1, "1")
+   field(LNK1, "$(M)$(H)HomeLL:Status.VAL CA")
+   field(DLY2, "0")
+   field(DOL2, "1")
+   field(LNK2, "$(M)$(H)MBStore.PROC CA")
+   field(DLY3, "0")
+   field(DOL3, "1")
+   field(LNK3, "$(M)$(H)HLStoreWiden.PROC CA")
+   field(DLY4, "1")
+   field(DOL4, "1")
+   field(LNK4, "$(M)$(H)PMMove.PROC CA")
+   field(DLY5, "1")
+   field(DOL5, "1")
+   field(LNK5, "$(M)$(H)HomeLL:Move.PROC CA")
+   field(DLY6, "1")
+   field(DOL6, "1")
+   field(LNK6, "$(M)$(H)HomeLL:Check.PROC CA")
+   field(DLY7, "0")
+   field(DOL7, "1")
+   field(LNK7, "$(M)$(H)HomeLL:Backoff.PROC CA")
+   field(DLY8, "0")
+   field(DOL8, "$(M)$(H)Speed.VAL")
+   field(LNK8, "$(M).VELO CA")
+   field(DLY9, "1")
+   field(DOL9, "1")
+   field(LNK9, "$(M)$(H)HomeLL:Move.PROC CA")
+   field(DLYA, "0")
+   field(DOLA, "1")
+   field(LNKA, "$(M)$(H)HomeLL2.PROC CA")
+   field(FLNK, "$(M)$(H)RestoreNormal")
+}
+record(sseq, "$(M)$(H)HomeLL2") {
+   field(WAIT1, "Wait")
+   field(WAIT2, "Wait")
+   field(WAIT3, "Wait")
+   field(WAIT4, "Wait")
+   field(WAIT5, "Wait")
+   field(DLY1, "1")
+   field(DOL1, "1")
+   field(LNK1, "$(M)$(H)HomeLL:Check.PROC CA")
+   field(DLY2, "0")
+   field(DOL2, "1")
+   field(LNK2, "$(M)$(H)RestoreSpeed.PROC CA")
+   field(DLY3, "1")
+   field(DOL3, "1")
+   field(LNK3, "$(M)$(H)PosSet.PROC CA")
+   field(DLY4, "1")
+   field(DOL4, "1")
+   field(LNK4, "$(M)$(H)MBMove.PROC CA")
+   field(DLY5, "0")
+   field(DOL5, "0")
+   field(LNK5, "$(M)$(H)HomeLL:Status.VAL CA")
+}
+
+# ///
+# /// Move to the low limit. This calculation also figures out if we
+# /// need to use the reverse limits due to a negative MRES, and if we need
+# /// to take into account backlash correction. 
+# ///
+record(calcout, "$(M):HomeLL:Move")
+{
+   field(INPA, "$(M):DirReverse")
+   field(INPB, "$(M).DHLM")
+   field(INPC, "$(M).DLLM")
+   field(INPD, "$(M).BDST")
+   field(INPE, "$(M).RHLS")
+   field(INPF, "$(M).RLLS")
+   field(CALC, "A=1?(E!=1):(F!=1)")
+   field(OOPT, "When Non-zero")
+   field(DOPT, "Use OCAL")
+   field(OCAL, "A=1?((D>0)?B:B+D):((D>0)?C+D:C)")
+   field(OUT, "$(M).DVAL PP")
+}
+
+# ///
+# /// Move the motor a distance equal to the HomeBackoff value
+# ///
+record(calcout, "$(M)$(H)HomeLL:Backoff")
+{
+   field(INPA, "$(M)$(H)Backoff")
+   field(INPB, "$(M).RBV")
+   field(INPC, "$(M)$(H)DirReverse")   
+   field(CALC, "(C=1)?(B-A):(B+A)")
+   field(OOPT, "Every Time")
+   field(DOPT, "Use CALC")
+   field(OUT, "$(M).VAL PP")
+}
+
+# ///
+# /// Abort the sseq if we are not on the low limit
+# ///
+record(calcout, "$(M)$(H)HomeLL:Check") {
+   field(INPA, "$(M).RLLS")
+   field(CALC, "(A!=1)?1:0")
+   field(OOPT, "When Non-zero")
+   field(DOPT, "Use CALC")
+   field(OUT, "$(M)$(H)HomeLL:Error PP")
+}
+
+# ///
+# /// Low limit home status flag
+# ///
+record(mbbo, "$(M)$(H)HomeLL:Status") {
+   field(DTYP, "Soft Channel")
+   field(VAL,  "0")
+   field(PINI, "YES")
+   field(ZRST, "Idle")
+   field(ONST, "Running")
+   field(TWST, "Error")
+   field(THST, "Aborted")
+   field(ZRSV, "NO_ALARM")
+   field(ONSV, "NO_ALARM")
+   field(TWSV, "MAJOR")
+   field(THSV, "MINOR")
+   info(archive, "Monitor, 00:00:01, VAL")      
+}
+
+# ///
+# /// Set the status flag to Error
+# ///
+record(longout, "$(M)$(H)HomeLL:SetError") {
+   field(DTYP, "Soft Channel")
+   field(VAL, "2")
+   field(OUT, "$(M)$(H)HomeLL:Status.VAL PP")
+}
+
+# ///
+# /// Set the status flag to Aborted, if we are running the seq
+# ///
+record(calcout, "$(M)$(H)HomeLL:SetAborted") {
+   field(INPA, "$(M)$(H)HomeLL:Status")
+   field(CALC, "A=1?3:0")
+   field(OOPT, "When Non-zero")
+   field(DOPT, "Use CALC")
+   field(OUT, "$(M)$(H)HomeLL:Status.VAL PP")
+}
+
+# ///
+# /// Abort the sequence. This is not
+# /// a manual abort, and should be not run
+# /// during a move, so we don't need to stop the motor.
+# ///
+record(dfanout, "$(M)$(H)HomeLL:Error") {
+  field(DOL, "1")
+  field(OUTA, "$(M)$(H)HomeLL:SetError.PROC PP")
+  field(OUTB, "$(M)$(H)HomeLL.ABORT PP")
+}
+
+# ///
+# /// This is triggered by a manual abort.
+# /// It stops the sequences and sets the status.
+# /// If we are in the middle of setting position, 
+# /// then we don't abort that. 
+# ///
+record(dfanout, "$(M)$(H)HomeLL:Abort") {
+  field(DOL, "1")
+  field(OUTA, "$(M)$(H)HomeLL:SetAborted.PROC PP")
+  field(OUTB, "$(M)$(H)HomeLL.ABORT PP")
+  field(OUTC, "$(M)$(H)HomeLL2.ABORT PP")
+  field(OUTD, "$(M).STOP PP")
+}
+
+
+###############################################################
+
+###############################################################
+# Sequence to execute the motor record home routine and set the home position
+###############################################################
+
+# ///
+# /// Record to run the motor record home routine (HOMR or HOMF)
+# /// If we don't see the homed bit on, we abort.
+# ///
+record(sseq, "$(M)$(H)HomeMR")
+{
+   field(WAIT1, "Wait")
+   field(WAIT2, "Wait")
+   field(WAIT3, "Wait")
+   field(WAIT4, "Wait")
+   field(WAIT5, "Wait")
+   field(WAIT6, "Wait")
+   field(WAIT7, "Wait")
+   field(WAIT8, "Wait")
+   field(WAIT9, "Wait")
+   field(DLY1, "0")
+   field(DOL1, "1")
+   field(LNK1, "$(M)$(H)HomeMR:Status.VAL CA")
+   field(DLY2, "0")
+   field(DOL2, "1")
+   field(LNK2, "$(M)$(H)HomeMBStore.PROC CA")
+   field(DLY3, "0")
+   field(DOL3, "1")
+   field(LNK3, "$(M)$(H)HomeLimit:SW.PROC CA") 
+   field(DLY4, "1")
+   field(DOL4, "1")
+   field(LNK4, "$(M)$(H)HomePMMove.PROC CA")
+   field(DLY5, "1")
+   field(DOL5, "1")
+   field(LNK5, "$(M)$(H)HomeMR:Run.PROC CA")
+   field(DLY6, "2")
+   field(DOL6, "1")
+   field(LNK6, "$(M)$(H)HomeMR:Check.PROC CA")
+   field(DLY7, "1")
+   field(DOL7, "1")
+   field(LNK7, "$(M)$(H)PosSet.PROC CA")
+   field(DLY8, "1")
+   field(DOL8, "1")
+   field(LNK8, "$(M)$(H)HomeMBMove.PROC CA")
+   field(DLY9, "0")
+   field(DOL9, "0")
+   field(LNK9, "$(M)$(H)HomeMR:Status.VAL CA")
+   field(FLNK, "$(M)$(H)HomeLimit:Restore")
+}
+
+# ///
+# /// Galil home status flag
+# ///
+record(mbbo, "$(M)$(H)HomeMR:Status") {
+   field(DTYP, "Soft Channel")
+   field(VAL,  "0")
+   field(PINI, "YES")
+   field(ZRST, "Idle")
+   field(ONST, "Running")
+   field(TWST, "Error")
+   field(THST, "Aborted")
+   field(ZRSV, "NO_ALARM")
+   field(ONSV, "NO_ALARM")
+   field(TWSV, "MAJOR")
+   field(THSV, "MINOR")
+   info(archive, "Monitor, 00:00:01, VAL")      
+}
+
+# ///
+# /// Set the status flag to Error
+# ///
+record(longout, "$(M)$(H)HomeMR:SetError") {
+   field(DTYP, "Soft Channel")
+   field(VAL, "2")
+   field(OUT, "$(M)$(H)HomeMR:Status.VAL PP")
+}
+
+# ///
+# /// Set the status flag to Aborted, if we are running the seq
+# ///
+record(calcout, "$(M)$(H)HomeMR:SetAborted") {
+   field(INPA, "$(M)$(H)HomeMR:Status")
+   field(CALC, "A=1?3:0")
+   field(OOPT, "When Non-zero")
+   field(DOPT, "Use CALC")
+   field(OUT, "$(M)$(H)HomeMR:Status.VAL PP")
+}
+
+# ///
+# /// Abort the sequence. This is not
+# /// a manual abort, and should be not run
+# /// during a move, so we don't need to stop the motor.
+# ///
+record(dfanout, "$(M)$(H)HomeMR:Error") {
+  field(DOL, "1")
+  field(OUTA, "$(M)$(H)HomeMR:SetError.PROC PP")
+  field(OUTB, "$(M)$(H)HomeMR.ABORT PP")
+}
+
+# ///
+# /// This is triggered by a manual abort.
+# /// It stops the sequence and sets the status.
+# ///
+record(dfanout, "$(M)$(H)HomeMR:Abort") {
+  field(DOL, "1")
+  field(OUTA, "$(M)$(H)HomeMR:SetAborted.PROC PP")
+  field(OUTB, "$(M)$(H)HomeMR.ABORT PP")
+  field(OUTC, "$(M).STOP PP")
+}
+
+# ///
+# /// Abort the sseq if we did not see a successful Galil home
+# ///
+record(calcout, "$(M)$(H)HomeMR:Check") {
+   field(INPA, "$(M)$(H)HomeBit")
+   field(CALC, "(A!=1)?1:0")
+   field(OOPT, "When Non-zero")
+   field(DOPT, "Use CALC")
+   field(OUT, "$(M)$(H)HomeMR:Error PP")
+}
+
+# ///
+# /// This selects which direction to go (only relevant for the home switch method)
+# ///
+record(bo, "$(M)$(H)HomeMR:Direction") {
+  field(PINI, "YES")
+  field(ZNAM, "Positive")
+  field(ONAM, "Negative")
+  info(autosaveFields, "VAL")
+  info(archive, "Monitor, 00:00:01, VAL")
+}
+
+# ///
+# /// Run the Galil home sequence (either the HOM0 or HOM1)
+# ///
+record(calcout, "$(M)$(H)HomeMR:Run") {
+   field(INPA, "$(M)$(H)HomeMR:Direction")
+   field(CALC, "A=0")
+   field(OOPT, "When Non-zero")
+   field(DOPT, "Use CALC")
+   field(OUT, "$(M).HOMF PP")
+   field(FLNK, "$(M)$(H)HomeMR:Run2")
+}
+record(calcout, "$(M)$(H)HomeMR:Run2") {
+   field(INPA, "$(M)$(H)HomeMR:Direction")
+   field(CALC, "A=1")
+   field(OOPT, "When Non-zero")
+   field(DOPT, "Use CALC")
+   field(OUT, "$(M).HOMR PP")
+}
+
+#######################################################################
+# Abort any of the running sequences
+
+record(dfanout, "$(M)$(H)Home:Abort") {
+  field(DOL, "1")
+  field(OUTA, "$(M)$(H)HomeMR:CalcAbort.PROC PP")
+  field(OUTB, "$(M)$(H)HomeLL:CalcAbort.PROC PP")
+  field(OUTC, "$(M)$(H)HomeHL:CalcAbort.PROC PP")
+}
+record(calcout, "$(M)$(H)HomeMR:CalcAbort") {
+  field(INPA, "$(M)$(H)HomeMR:Status")
+  field(CALC, "A=1")
+  field(OOPT, "When Non-zero")
+  field(DOPT, "Use CALC")
+  field(OUT, "$(M)$(H)HomeMR:Abort.PROC PP")
+}
+record(calcout, "$(M)$(H)HomeLL:CalcAbort") {
+  field(INPA, "$(M)$(H)HomeLL:Status")
+  field(CALC, "A=1")
+  field(OOPT, "When Non-zero")
+  field(DOPT, "Use CALC")
+  field(OUT, "$(M)$(H)HomeLL:Abort.PROC PP")
+}
+record(calcout, "$(M)$(H)HomeHL:CalcAbort") {
+  field(INPA, "$(M)$(H)HomeHL:Status")
+  field(CALC, "A=1")
+  field(OOPT, "When Non-zero")
+  field(DOPT, "Use CALC")
+  field(OUT, "$(M)$(H)HomeHL:Abort.PROC PP")
+}
+
+
