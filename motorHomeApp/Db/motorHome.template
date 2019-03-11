@@ -59,7 +59,7 @@ record(mbbo, "$(M)$(H)Type") {
   field(TWST, "Neg Limit")
   field(THST, "Pos Limit")
   field(FRST, "Set Current Pos As Home")
-  field(FVST, "Set Current Pos Using OFF")
+  field(FVST, "Set Home Pos Using OFF")
 }
 
 # ///
@@ -110,6 +110,10 @@ record(ao, "$(M)$(H)Speed") {
 include "motorHomeLimit.template"
 
 include "motorHomeMotorRecord.template"
+
+include "motorHomePosSet.template"
+
+include "motorHomeOffSet.template"
 
 ##################################################################
 # Logic that deals with a pre-home move (PM) , either to a defined 
