@@ -1,0 +1,151 @@
+
+##################################################################
+# Template file containing the logic to home on a limit switch, and
+# several other records to support this.
+# 
+# This template is included in motorHome.template, but can be 
+# instantiated seperatly along with motorHomeCommon.template.
+#
+# Macros:
+# Need all the macros already used by motorHome.template
+# In addition we need:
+#
+# Matt Pearson
+# ORNL
+# 
+# March 2019
+#
+##################################################################
+
+##################################################################
+# Sequence to home on a high or low limit switch
+
+record(sseq, "$(M)$(H)HomeLim") {
+  field(WAIT1, "Wait")
+  field(WAIT2, "Wait")
+  field(WAIT3, "Wait")
+  field(WAIT4, "Wait")
+  field(WAIT5, "Wait")
+  field(WAIT6, "Wait")
+  field(WAIT7, "Wait")
+  field(WAIT8, "Wait")
+  field(WAIT9, "Wait")
+  field(WAITA, "Wait")
+  field(DLY1, "0")
+  field(DOL1, "1")
+  field(LNK1, "$(M)$(H)Status.VAL CA")
+  field(DLY2, "0")
+  field(DOL2, "1")
+  field(LNK2, "$(M)$(H)Init.PROC CA")
+  field(DLY3, "1")
+  field(DOL3, "1")
+  field(LNK3, "$(M)$(H)PMMove.PROC CA")
+  field(DLY4, "1")
+  field(DOL4, "1")
+  field(LNK4, "$(M)$(H)Lim:Move.PROC CA")
+  field(DLY5, "1")
+  field(DOL5, "1")
+  field(LNK5, "$(M)$(H)Lim:Check.PROC CA")
+  field(DLY6, "0")
+  field(DOL6, "1")
+  field(LNK6, "$(M)$(H)HomeLim:BO.PROC CA")
+  field(DLY7, "0")
+  field(DOL7, "$(M)$(H)Speed.VAL")
+  field(LNK7, "$(M).VELO CA")
+  field(DLY8, "1")
+  field(DOL8, "1")
+  field(LNK8, "$(M)$(H)Lim:Move.PROC CA")
+  field(DLY9, "0")
+  field(DOL9, "1")
+  field(LNK9, "$(M)$(H)HomeLim2.PROC CA")
+  field(FLNK, "$(M)$(H)RestoreNormal")
+}
+record(sseq, "$(M)$(H)HomeLim2") {
+  field(WAIT1, "Wait")
+  field(WAIT2, "Wait")
+  field(WAIT3, "Wait")
+  field(WAIT4, "Wait")
+  field(WAIT5, "Wait")
+  field(DLY1, "1")
+  field(DOL1, "1")
+  field(LNK1, "$(M)$(H)Lim:Check.PROC CA")
+  field(DLY2, "0")
+  field(DOL2, "1")
+  field(LNK2, "$(M)$(H)RestoreSpeed.PROC CA")
+  field(DLY3, "1")
+  field(DOL3, "1")
+  field(LNK3, "$(M)$(H)PosSet.PROC CA")
+  field(DLY4, "1")
+  field(DOL4, "1")
+  field(LNK4, "$(M)$(H)MBMove.PROC CA")
+  field(DLY5, "0")
+  field(DOL5, "0")
+  field(LNK5, "$(M)$(H)Status.VAL CA")
+}
+
+# ///
+# /// Backoff the limit switch.
+# /// This could be done in one calcout, but I seperate 
+# /// it so it's slightly easier to understand.
+# ///
+record(calcout, "$(M)$(H)HomeLim:BO") {
+  field(INPA, "$(M)$(H)Lim:Type")
+  field(INPB, "$(M)$(H)DirReverse")
+  field(CALC, "B=1?(A?A:A+2):A+1")
+  field(OOPT, "Every Time")
+  field(DOPT, "Use CALC")
+  field(OUT, "$(M)$(H)HomeLim:BOSeq.SELN PP")
+}
+record(seq, "$(M)$(H)HomeLim:BOSeq") {
+  field(SELM, "Specified")
+  field(DOL1, "1")
+  field(DOL2, "1")
+  field(LNK1, "$(M)$(H)HomeLim:BOLL.PROC PP")
+  field(LNK2, "$(M)$(H)HomeLim:BOHL.PROC PP")
+}
+# ///
+# /// Backoff the high limit
+# ///
+record(calcout, "$(M)$(H)HomeLim:BOHL") {
+  field(INPA, "$(M)$(H)Backoff")
+  field(INPB, "$(M).RBV")
+  field(CALC, "B-A")
+  field(OOPT, "Every Time")
+  field(DOPT, "Use CALC")
+  field(OUT, "$(M).DVAL PP")
+}
+# ///
+# /// Backoff the low limit
+# ///
+record(calcout, "$(M)$(H)HomeLim:BOLL") {
+  field(INPA, "$(M)$(H)Backoff")
+  field(INPB, "$(M).RBV")
+  field(CALC, "B+A")
+  field(OOPT, "Every Time")
+  field(DOPT, "Use CALC")
+  field(OUT, "$(M).DVAL PP")
+}
+
+# ///
+# /// Abort the sequence and generate an error. This is not
+# /// a manual abort, and should be not run during a move, 
+# /// so we don't need to stop the motor.
+# ///
+record(dfanout, "$(M)$(H)HomeLim:Error") {
+  field(DOL, "1")
+  field(OUTA, "$(M)$(H)SetError.PROC PP")
+  field(OUTB, "$(M)$(H)HomeLim:Abort.PROC PP")
+}
+
+# ///
+# /// Abort both limit sseq records.
+# /// If we are in the middle of setting position, then 
+# /// we don't abort that. 
+# ///
+record(dfanout, "$(M)$(H)HomeLim:Abort") {
+  field(DOL, "1")
+  field(OUTA, "$(M)$(H)HomeLim.ABORT PP")
+  field(OUTB, "$(M)$(H)HomeLim2.ABORT PP")
+
+}
+

@@ -1,0 +1,126 @@
+
+##################################################################
+# Template file containing the logic to home using the motor record
+# HOMF or HOMR interface.
+# This template is included in motorHome.template, but can be 
+# instantiated seperately along with motorHomeCommon.template.
+#
+# Macros:
+# Need all the macros already used by motorHome.template
+#
+# Matt Pearson
+# ORNL
+# 
+# March 2019
+#
+##################################################################
+
+# ///
+# /// Record to run the motor record home routine (HOMR or HOMF)
+# /// If we don't see the homed bit on, we abort.
+# ///
+record(sseq, "$(M)$(H)HomeMR") {
+  field(WAIT1, "Wait")
+  field(WAIT2, "Wait")
+  field(WAIT3, "Wait")
+  field(WAIT4, "Wait")
+  field(WAIT5, "Wait")
+  field(WAIT6, "Wait")
+  field(WAIT7, "Wait")
+  field(WAIT8, "Wait")
+  field(WAIT9, "Wait")
+  field(WAITA, "Wait")
+  field(DLY1, "0")
+  field(DOL1, "1")
+  field(LNK1, "$(M)$(H)Status.VAL CA")
+  field(DLY2, "0")
+  field(DOL2, "1")
+  field(LNK2, "$(M)$(H)Init.PROC CA")
+  field(DLY3, "1")
+  field(DOL3, "1")
+  field(LNK3, "$(M)$(H)PMMove.PROC CA")
+  field(DLY4, "1")
+  field(DOL4, "1")
+  field(LNK4, "$(M)$(H)Lim:Move.PROC CA")
+  field(DLY5, "1")
+  field(DOL5, "1")
+  field(LNK5, "$(M)$(H)Lim:Check.PROC CA")
+  field(DLY6, "1")
+  field(DOL6, "1")
+  field(LNK6, "$(M)$(H)HomeMR:Run.PROC CA")
+  field(DLY7, "2")
+  field(DOL7, "1")
+  field(LNK7, "$(M)$(H)HomeMR:Check.PROC CA")
+  field(DLY8, "1")
+  field(DOL8, "1")
+  field(LNK8, "$(M)$(H)PosSet.PROC CA")
+  field(DLY9, "1")
+  field(DOL9, "1")
+  field(LNK9, "$(M)$(H)MBMove.PROC CA")
+  field(DLYA, "0")
+  field(DOLA, "0")
+  field(LNKA, "$(M)$(H)Status.VAL CA")
+  field(FLNK, "$(M)$(H)RestoreNormal")
+}
+
+# ///
+# /// Abort the sseq if we did not see a successful Galil home
+# ///
+record(calcout, "$(M)$(H)HomeMR:Check") {
+   field(INPA, "$(M)$(H)HomeBit")
+   field(CALC, "(A!=1)?1:0")
+   field(OOPT, "When Non-zero")
+   field(DOPT, "Use CALC")
+   field(OUT, "$(M)$(H)HomeMR:Error PP")
+}
+
+# ///
+# /// This selects which direction to go (only relevant for the home switch method)
+# ///
+record(bo, "$(M)$(H)HomeMR:Dir") {
+  field(PINI, "YES")
+  field(ZNAM, "Positive")
+  field(ONAM, "Negative")
+  info(autosaveFields, "VAL")
+  info(archive, "Monitor, 00:00:01, VAL")
+}
+
+# ///
+# /// Run the controller/driver home sequence (either the HOM0 or HOM1)
+# ///
+record(calcout, "$(M)$(H)HomeMR:Run") {
+   field(INPA, "$(M)$(H)HomeMR:Dir")
+   field(CALC, "A=0")
+   field(OOPT, "When Non-zero")
+   field(DOPT, "Use CALC")
+   field(OUT, "$(M).HOMF PP")
+   field(FLNK, "$(M)$(H)HomeMR:Run2")
+}
+record(calcout, "$(M)$(H)HomeMR:Run2") {
+   field(INPA, "$(M)$(H)HomeMR:Dir")
+   field(CALC, "A=1")
+   field(OOPT, "When Non-zero")
+   field(DOPT, "Use CALC")
+   field(OUT, "$(M).HOMR PP")
+}
+
+# ///
+# /// Abort the sequence and generate an error. This is not
+# /// a manual abort, and should be not run during a move, 
+# /// so we don't need to stop the motor.
+# ///
+record(dfanout, "$(M)$(H)HomeMR:Error") {
+  field(DOL, "1")
+  field(OUTA, "$(M)$(H)SetError.PROC PP")
+  field(OUTB, "$(M)$(H)HomeMR:Abort.PROC PP")
+}
+
+# ///
+# /// Abort the sseq record.
+# ///
+record(dfanout, "$(M)$(H)HomeMR:Abort") {
+  field(DOL, "1")
+  field(OUTA, "$(M)$(H)HomeMR.ABORT PP")
+}
+
+
