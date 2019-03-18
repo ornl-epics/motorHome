@@ -2,11 +2,11 @@
 ##################################################################
 # Template file containing the logic to home using the motor record
 # HOMF or HOMR interface.
+#
 # This template is included in motorHome.template, but can be 
 # instantiated seperately along with motorHomeCommon.template.
 #
-# Macros:
-# Need all the macros already used by motorHome.template
+# Required macros are defined at the top of motorHome.template
 #
 # Matt Pearson
 # ORNL
@@ -64,14 +64,14 @@ record(sseq, "$(M)$(H)HomeMR") {
 }
 
 # ///
-# /// Abort the sseq if we did not see a successful Galil home
+# /// Abort the sseq if we did not see a successful home
 # ///
 record(calcout, "$(M)$(H)HomeMRCheck") {
    field(INPA, "$(M)$(H)HomeBit")
    field(CALC, "(A!=1)?1:0")
    field(OOPT, "When Non-zero")
    field(DOPT, "Use CALC")
-   field(OUT, "$(M)$(H)HomeMRError PP")
+   field(OUT, "$(M)$(H)Error.PROC PP")
 }
 
 # ///
@@ -118,17 +118,6 @@ record(calcout, "$(M)$(H)HomeMRStatCalc") {
 record(bo, "$(M)$(H)HomeMRStat") {
   field(ZNAM, "Not Homed")
   field(ONAM, "Homed")
-}
-
-# ///
-# /// Abort the sequence and generate an error. This is not
-# /// a manual abort, and should be not run during a move, 
-# /// so we don't need to stop the motor.
-# ///
-record(dfanout, "$(M)$(H)HomeMRError") {
-  field(DOL, "1")
-  field(OUTA, "$(M)$(H)SetError.PROC PP")
-  field(OUTB, "$(M)$(H)HomeMRAbort.PROC PP")
 }
 
 # ///
