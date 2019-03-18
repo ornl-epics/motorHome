@@ -4,20 +4,8 @@
 # any motor record axis. In this file are the common records
 # that can be used with any of the pre-defined home routines.
 # 
-# Macros:
-# M - Base PV name (should match the motor record)
-# H - Second part of the PV names (eg. :Home:)
-# H_TYPE - Home type (See $(M)$(H)Type record for options)
-# H_POS - Home position to set at end of home sequence. 
-# H_SPEED - Home speed. This is used when approching a limit switch 
-#           (after we initially found it and have already moved off the switch)
-# H_BACKOFF - Home backoff. The distance to move off a limit switch. The sign is important.
-# H_EGU - Units string (default=mm)
-# H_PREC - Display precision (default=4)
-# H_LIM_DIR - Defined which limit switch to move to for both the 
-#             limit switch homes and the motor record homes.
-#             Default = 0. 0=Neg Limit, 1=Pos Limit
-#
+# Required macros are defined at the top of motorHome.template
+# 
 # Matt Pearson
 # ORNL
 # 

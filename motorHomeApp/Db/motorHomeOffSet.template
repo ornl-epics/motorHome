@@ -8,9 +8,7 @@
 # This template is included in motorHome.template, but can be 
 # instantiated seperatly along with motorHomeCommon.template.
 #
-# Macros:
-# Need all the macros already used by motorHome.template
-# In addition we need:
+# Required macros are defined at the top of motorHome.template
 #
 # Matt Pearson
 # ORNL
