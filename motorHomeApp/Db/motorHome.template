@@ -1,15 +1,15 @@
 ##################################################################
 #
 # Template to provide a set of records to aid in homing
-# any motor record axis. Several homing methods are supported:
+# any motor record axis. Several homing methods (H_TYPE) are supported:
 #
-# 1) Home to a low limit
-# 2) Home to a high limit
-# 3) Home by using the motor record HOMF/HOMR
+# 1) Custom home routine (see HomeCustom below)
+# 2) Home by using the motor record HOMF/HOMR
+# 3) Home to a low or high limit switch (direction is defined by H_LIM_DIR)
 # 4) Home by just setting the home position at the current position
 # 5) Home by just setting the motor record offset OFF
 #
-# Method 3) above covers the situations where the controller or driver 
+# Method 2) above covers the situations where the controller or driver 
 # takes care of the homing, for example using a home switch or encoder 
 # reference mark.
 # 
