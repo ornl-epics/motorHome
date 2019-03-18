@@ -42,9 +42,9 @@ record(mbbo, "$(M)$(H)Type") {
   field(FRVL, "4")
   field(FVVL, "5")
   field(ZRST, "None")
-  field(ONST, "Motor Record")
-  field(TWST, "Neg Limit")
-  field(THST, "Pos Limit")
+  field(ONST, "Custom")
+  field(TWST, "Motor Record")
+  field(THST, "Limit Switch")
   field(FRST, "Set Current Pos As Home")
   field(FVST, "Set Home Pos Using OFF")
 }
