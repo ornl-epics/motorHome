@@ -2,7 +2,7 @@
 #
 # Template to provide a set of records to aid in homing
 # any motor record axis. In this file are the common records
-# that can be used with any of the pre-defined home routines.
+# that can be used with any of the pre-defined or custom home routines.
 # 
 # Required macros are defined at the top of motorHome.template
 # 
@@ -549,18 +549,22 @@ record(calcout, "$(M)$(H)LimCtlRestoreL") {
 record(dfanout, "$(M)$(H)Abort") {
   field(DOL, "1")
   field(OUTA, "$(M)$(H)SetAborted.PROC PP")
-  field(OUTB, "$(M)$(H)HomeMRAbort.PROC PP")
-  field(OUTC, "$(M)$(H)HomeLimAbort.PROC PP")
-  field(OUTD, "$(M)$(H)HomePosSetAbort.PROC PP")
-  field(OUTE, "$(M).STOP PP")
+  field(OUTB, "$(M)$(H)HomeCustomAbort.PROC PP")
+  field(OUTC, "$(M)$(H)HomeMRAbort.PROC PP")
+  field(OUTD, "$(M)$(H)HomeLimAbort.PROC PP")
+  field(OUTE, "$(M)$(H)HomePosSetAbort.PROC PP")
+  field(OUTF, "$(M)$(H)HomeOffSetAbort.PROC PP")
+  field(OUTG, "$(M).STOP PP")
 }
 
 record(dfanout, "$(M)$(H)Error") {
   field(DOL, "1")
   field(OUTA, "$(M)$(H)SetError.PROC PP")
-  field(OUTB, "$(M)$(H)HomeMRAbort.PROC PP")
-  field(OUTC, "$(M)$(H)HomeLimAbort.PROC PP")
-  field(OUTC, "$(M)$(H)HomePosSetAbort.PROC PP")
+  field(OUTB, "$(M)$(H)HomeCustomAbort.PROC PP")
+  field(OUTC, "$(M)$(H)HomeMRAbort.PROC PP")
+  field(OUTD, "$(M)$(H)HomeLimAbort.PROC PP")
+  field(OUTE, "$(M)$(H)HomePosSetAbort.PROC PP")
+  field(OUTF, "$(M)$(H)HomeOffSetAbort.PROC PP")
 }
 
 record(calcout, "$(M)$(H)SetAborted") {

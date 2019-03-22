@@ -37,13 +37,8 @@ record(sseq, "$(M)$(H)HomePosSet") {
 # ///
 # /// Abort the sseq record.
 # /// If we are in the middle of setting position, then 
-# /// we don't abort that. 
+# /// we don't abort that. So there is nothing to abort.
 # ///
-record(calcout, "$(M)$(H)HomePosSetAbort") {
-  field(INPA, "$(M)$(H)HomePosSet.BUSY")
-  field(CALC, "A=1")
-  field(OOPT, "When Non-zero")
-  field(DOPT, "Use CALC")
-  field(OUT, "$(M)$(H)HomePosSet.ABORT PP")
+record(bo, "$(M)$(H)HomePosSetAbort") {
 }
 
