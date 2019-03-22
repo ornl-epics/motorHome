@@ -83,7 +83,7 @@ record(sseq, "$(M)$(H)HomeLim2") {
 
 # ///
 # /// Backoff the limit switch.
-# /// This could be done in one calcout, but separate
+# /// This could be done in one calcout, but seperated
 # /// it's slightly easier to understand.
 # ///
 record(calcout, "$(M)$(H)HomeLimBO") {
