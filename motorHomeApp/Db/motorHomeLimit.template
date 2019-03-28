@@ -116,7 +116,7 @@ record(calcout, "$(M)$(H)HomeLimBOHL") {
 # /// Backoff the low limit
 # ///
 record(calcout, "$(M)$(H)HomeLimBOLL") {
-  field(INPA, "$(M)$(H)Backoff")
+  field(INPA, "$(M)$(H)HomeLimBODist")
   field(INPB, "$(M).RBV")
   field(CALC, "B+A")
   field(OOPT, "Every Time")
