@@ -439,7 +439,7 @@ record(calcout, "$(M)$(H)LimMoveHL") {
 record(calcout, "$(M)$(H)LimCheck") {
   field(INPA, "$(M)$(H)LimType")
   field(INPB, "$(M).RHLS")
-  field(INPC, "$(M).RHLS")
+  field(INPC, "$(M).RLLS")
   field(CALC, "A?!B:!C")
   field(OOPT, "When Non-zero")
   field(DOPT, "Use CALC")
@@ -502,13 +502,13 @@ record(calcout, "$(M)$(H)LimCtlWiden") {
    field(OUT, "$(M)$(H)LimCtlWidenH.PROC PP")
 }
 record(calcout, "$(M)$(H)LimCtlWidenH") {
-   field(INPA, "$(M)$(H)LimCtlHigh")
+   field(INPA, "$(M)$(H)LimCtlH")
    field(CALC, "A")
    field(OUT, "$(M).DHLM PP")
    field(FLNK, "$(M)$(H)LimCtlWidenL")
 }
 record(calcout, "$(M)$(H)LimCtlWidenL") {
-   field(INPA, "$(M)$(H)LimCtlLow")
+   field(INPA, "$(M)$(H)LimCtlL")
    field(CALC, "A")
    field(OUT, "$(M).DLLM PP")
 }
