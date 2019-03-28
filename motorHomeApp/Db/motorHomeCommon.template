@@ -318,7 +318,7 @@ record(calc, "$(M)$(H)PSCounter") {
 # /// Process $(M)$(H)MBStored
 # /// Process $(M)$(H)LimStoreWiden
 # ///
-record(dfanout, $(M)$(H)Init") {
+record(dfanout, "$(M)$(H)Init") {
   field(VAL, "1")
   field(OUTA, "$(M)$(H)MBStored.PROC PP")
   field(OUTB, "$(M)$(H)LimCtlStoreWiden.PROC PP")
@@ -350,7 +350,7 @@ record(ai, "$(M)$(H)NormalSpeed") {
   field(INP, "$(M).VELO")
   field(PREC, "$(H_PREC=4)")
   info(archive, "Monitor, 00:00:01, VAL")
-
+}
 
 # ///
 # /// Set the speed back to the normal speed at the 
