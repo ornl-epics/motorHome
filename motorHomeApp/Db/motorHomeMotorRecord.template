@@ -41,10 +41,10 @@ record(sseq, "$(M)$(H)HomeMR") {
   field(LNK3, "$(M)$(H)PMMove.PROC CA")
   field(DLY4, "1")
   field(DOL4, "1")
-  field(LNK4, "$(M)$(H)LimMove.PROC CA")
+  field(LNK4, "$(M)$(H)HomeMRLim.PROC CA")
   field(DLY5, "1")
   field(DOL5, "1")
-  field(LNK5, "$(M)$(H)LimCheck.PROC CA")
+  field(LNK5, "$(M)$(H)HomeMRLimCheck.PROC CA")
   field(DLY6, "1")
   field(DOL6, "1")
   field(LNK6, "$(M)$(H)HomeMRRun.PROC CA")
@@ -61,6 +61,31 @@ record(sseq, "$(M)$(H)HomeMR") {
   field(DOLA, "0")
   field(LNKA, "$(M)$(H)Status.VAL CA")
   field(FLNK, "$(M)$(H)RestoreNormal")
+}
+
+# ///
+# /// Optional move to limit before running the motor record home
+# ///
+record(bo, "$(M)$(H)HomeMRLimOpt") {
+  field(PINI, "YES")
+  field(ZNAM, "No")
+  field(ONAM, "Yes")
+  info(autosaveFields, "VAL")
+  info(archive, "Monitor, 00:00:01, VAL")
+}
+record(calcout, "$(M)$(H)HomeMRLim") {
+   field(INPA, "$(M)$(H)HomeMRLimOpt MS")
+   field(CALC, "A=1")
+   field(OOPT, "When Non-zero")
+   field(DOPT, "Use CALC")
+   field(OUT, "$(M)$(H)LimMove.PROC PP")
+}
+record(calcout, "$(M)$(H)HomeMRLimCheck") {
+   field(INPA, "$(M)$(H)HomeMRLimOpt MS")
+   field(CALC, "A=1")
+   field(OOPT, "When Non-zero")
+   field(DOPT, "Use CALC")
+   field(OUT, "$(M)$(H)LimCheck.PROC PP")
 }
 
 # ///
