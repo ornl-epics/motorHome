@@ -67,7 +67,7 @@ record(sseq, "$(M)$(H)HomeMR") {
 # /// Abort the sseq if we did not see a successful home
 # ///
 record(calcout, "$(M)$(H)HomeMRCheck") {
-   field(INPA, "$(M)$(H)HomeBit")
+   field(INPA, "$(M)$(H)HomeMRStat MS")
    field(CALC, "(A!=1)?1:0")
    field(OOPT, "When Non-zero")
    field(DOPT, "Use CALC")
