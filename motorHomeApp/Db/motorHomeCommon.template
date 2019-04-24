@@ -64,6 +64,7 @@ record(ao, "$(M)$(H)Pos") {
   field(EGU, "$(H_EGU=mm)")
   field(PREC, "$(H_PREC=4)")
   field(ASG, "BEAMLINE")
+  info(autosaveFields, "VAL")
   info(archive, "Monitor, 00:00:01, VAL")   
 }
 
@@ -77,6 +78,8 @@ record(ao, "$(M)$(H)Speed") {
   field(PINI, "YES")
   field(VAL, "$(H_SPEED=0.1)")
   field(PREC, "$(H_PREC=4)")
+  info(autosaveFields, "VAL")
+  info(archive, "Monitor, 00:00:01, VAL")
 }
 
 ##################################################################
