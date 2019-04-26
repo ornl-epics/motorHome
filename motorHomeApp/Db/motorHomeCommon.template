@@ -101,7 +101,7 @@ record(mbbo, "$(M)$(H)PMCtl") {
 }
 
 # ///
-# /// The position that will be moved to (either absolute or relative)
+# /// The dial position that will be moved to (either absolute or relative)
 # ///
 record(ao, "$(M)$(H)PMPos") {
   field(PINI, "YES")
@@ -123,29 +123,29 @@ record(calcout, "$(M)$(H)PMMove") {
   field(OOPT, "When Non-zero")
   field(DOPT, "Use OCAL")
   field(OCAL, "B")
-  field(OUT, "$(M) PP")
+  field(OUT, "$(M).DVAL PP")
   field(FLNK, "$(M)$(H)PMMove2")
 }
 record(calcout, "$(M)$(H)PMMove2") {
   field(INPA, "$(M)$(H)PMCtl")
   field(INPB, "$(M)$(H)PMPos")
-  field(INPC, "$(M).RBV")
+  field(INPC, "$(M).DRBV")
   field(CALC, "A==2")
   field(OOPT, "When Non-zero")
   field(DOPT, "Use OCAL")
   field(OCAL, "B+C")
-  field(OUT, "$(M) PP")
+  field(OUT, "$(M).DVAL PP")
 }
 
 # ///
-# /// Manually move to the defned pre-home position
+# /// Manually move to the defned pre-home dial position
 # ///
 record(calcout, "$(M)$(H)PMMoveMan") {
   field(INPA, "$(M)$(H)PMPos")
   field(CALC, "A")
   field(OOPT, "Every Time")
   field(DOPT, "Use CALC")
-  field(OUT, "$(M) PP")
+  field(OUT, "$(M).DVAL PP")
 }
 
 ##################################################################
@@ -170,14 +170,14 @@ record(mbbo, "$(M)$(H)MBCtl") {
 # /// Store the pre-home position
 # ///
 record(ai, "$(M)$(H)MBStored") {
-  field(INP, "$(M).RBV")
+  field(INP, "$(M).DRBV")
   field(EGU, "$(H_EGU=mm)")
   field(PREC, "$(H_PREC=4)")
   info(archive, "Monitor, 00:00:01, VAL")   
 }
 
 # ///
-# /// Manually define a position to move back to
+# /// Manually define a dial position to move back to
 # ///
 record(ao, "$(M)$(H)MBPos") {
   field(PINI, "YES")
@@ -190,8 +190,8 @@ record(ao, "$(M)$(H)MBPos") {
 }
 
 # ///
-# /// This either moves back to the last pre-home position or a defined position,
-# /// depending on the selected method.
+# /// This either moves back to the last pre-home dial position or 
+# /// a defined dial position, depending on the selected method.
 # ///
 record(calcout, "$(M)$(H)MBMove") {
   field(INPA, "$(M)$(H)MBCtl")
@@ -200,7 +200,7 @@ record(calcout, "$(M)$(H)MBMove") {
   field(OOPT, "When Non-zero")
   field(DOPT, "Use OCAL")
   field(OCAL, "B")
-  field(OUT, "$(M) PP")
+  field(OUT, "$(M).DVAL PP")
   field(FLNK, "$(M)$(H)MBMove2")
 }
 record(calcout, "$(M)$(H)MBMove2") {
@@ -210,7 +210,7 @@ record(calcout, "$(M)$(H)MBMove2") {
   field(OOPT, "When Non-zero")
   field(DOPT, "Use OCAL")
   field(OCAL, "B")
-  field(OUT, "$(M) PP")
+  field(OUT, "$(M).DVAL PP")
 }
 # ///
 # /// Manually move back to the pre-home position
@@ -220,7 +220,7 @@ record(calcout, "$(M)$(H)MBMoveStored") {
   field(CALC, "A")
   field(OOPT, "Every Time")
   field(DOPT, "Use CALC")
-  field(OUT, "$(M) PP")
+  field(OUT, "$(M).DVAL PP")
 }
 # ///
 # /// Manually move back to a defined position.
@@ -230,7 +230,7 @@ record(calcout, "$(M)$(H)MBMovePos") {
   field(CALC, "A")
   field(OOPT, "Every Time")
   field(DOPT, "Use CALC")
-  field(OUT, "$(M) PP")
+  field(OUT, "$(M).DVAL PP")
 }
 
 ##################################################################

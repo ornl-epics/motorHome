@@ -106,7 +106,7 @@ record(seq, "$(M)$(H)HomeLimBOSeq") {
 # ///
 record(calcout, "$(M)$(H)HomeLimBOHL") {
   field(INPA, "$(M)$(H)HomeLimBODist")
-  field(INPB, "$(M).RBV")
+  field(INPB, "$(M).DRBV")
   field(CALC, "B-A")
   field(OOPT, "Every Time")
   field(DOPT, "Use CALC")
@@ -117,7 +117,7 @@ record(calcout, "$(M)$(H)HomeLimBOHL") {
 # ///
 record(calcout, "$(M)$(H)HomeLimBOLL") {
   field(INPA, "$(M)$(H)HomeLimBODist")
-  field(INPB, "$(M).RBV")
+  field(INPB, "$(M).DRBV")
   field(CALC, "B+A")
   field(OOPT, "Every Time")
   field(DOPT, "Use CALC")
