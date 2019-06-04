@@ -30,17 +30,23 @@
 # Macros:
 # M -          Base PV name (should match the motor record)
 # H -          Second part of the PV names (eg. :Home: or simply :H:)
-# H_TYPE -     Home type (See $(M)$(H)Type record in motorRecordCommon.template for options)
+# H_TYPE -     Home type (see $(M)$(H)Type record in motorRecordCommon.template). Options are:
+#                0 - None (no home routine)
+#                1 - Custom home routine
+#                2 - Motor record (HOMF/HOMR) based home routine
+#                3 - Limit switch routine (pos or neg, defined by H_LIM_DIR below)
+#                4 - Change the position to the home position (H_POS) by setting the controller position
+#                5 - Change the position to the home position (H_POS) by using the offset field 
+#                    (use this for absolute encoders)
 # H_POS -      Home position to set at end of home sequence. 
-# H_SPEED -    Home speed. This is used when approching a limit switch 
-#              (after we initially found it and have already backed off the switch)
+# H_SPEED -    Home speed. This is used when approching a limit switch (after we initially found 
+#              it and have already backed off the switch)
 # H_BACKOFF -  Home backoff. The distance to move off a limit switch. The sign is important.
 # H_EGU -      Units string (default=mm)
 # H_PREC -     Display precision (default=4)
-# H_LIM_DIR -  Define which limit switch to move to for both the 
-#              limit switch homes and the motor record homes.
+# H_LIM_DIR -  Define which limit switch to move to for both the limit switch homes and the motor record homes.
 #              Default = 0. 0=Neg Limit, 1=Pos Limit
-# H_ASG -      The ASG level to use for the reconds that configure the home routines (default=BEAMLINE)
+# H_ASG -      The ASG level to use for the records that configure the home routines (default=BEAMLINE)
 # H_ASG_MOVE - The ASG level to use for the move records (the main Home record included) (default=)
 #
 # Matt Pearson
