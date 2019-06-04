@@ -471,6 +471,7 @@ record(bo, "$(M)$(H)LimCtl") {
    info(archive, "Monitor, 00:00:01, VAL")   
 }
 record(ai, "$(M)$(H)LimCtlH") {
+   field(PINI, "YES")
    field(EGU, "$(H_EGU=mm)")
    field(PREC, "$(H_PREC=4)")
    field(ASG, "$(H_ASG=BEAMLINE)")
@@ -478,6 +479,7 @@ record(ai, "$(M)$(H)LimCtlH") {
    info(archive, "Monitor, 00:00:01, VAL")
 }
 record(ai, "$(M)$(H)LimCtlL") {
+   field(PINI, "YES")
    field(EGU, "$(H_EGU=mm)")
    field(PREC, "$(H_PREC=4)")
    field(ASG, "$(H_ASG=BEAMLINE)")
