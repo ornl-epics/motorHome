@@ -50,7 +50,7 @@ record(mbbo, "$(M)$(H)Status") {
   field(TWST, "Error")
   field(THST, "Aborted")
   field(ZRSV, "NO_ALARM")
-  field(ONSV, "NO_ALARM")
+  field(ONSV, "MINOR")
   field(TWSV, "MAJOR")
   field(THSV, "MINOR")
   info(archive, "Monitor, 00:00:01, VAL")      
