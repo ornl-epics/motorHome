@@ -46,11 +46,11 @@ record(bo, "$(M)$(H)HomeOffSetAbort") {
 # ///
 record(calcout, "$(M)$(H)OffSetCalc") {
    field(INPA, "$(M)$(H)Pos")
-   field(INPB, "$(M)$(H).DRBV")
+   field(INPB, "$(M).DRBV")
    field(CALC, "A-B")
    field(OOPT, "Every Time")
    field(DOPT, "Use CALC")
-   field(OUT, "$(M)$(H).OFF PP")
+   field(OUT, "$(M).OFF PP")
 }
 
 
