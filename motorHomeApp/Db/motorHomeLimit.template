@@ -131,6 +131,7 @@ record(ao, "$(M)$(H)HomeLimBODist") {
   field(VAL, "$(H_BACKOFF=1)")
   field(EGU, "$(H_EGU=mm)")
   field(PREC, "$(H_PREC=4)")
+  field(ASG, "$(H_ASG=EXPERT)")
   info(autosaveFields, "VAL")
   info(archive, "Monitor, 00:00:01, VAL")
 }

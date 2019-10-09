@@ -70,6 +70,7 @@ record(bo, "$(M)$(H)HomeMRLimOpt") {
   field(PINI, "YES")
   field(ZNAM, "No")
   field(ONAM, "Yes")
+  field(ASG, "$(H_ASG=EXPERT)")
   info(autosaveFields, "VAL")
   info(archive, "Monitor, 00:00:01, VAL")
 }
@@ -106,6 +107,7 @@ record(bo, "$(M)$(H)HomeMRDir") {
   field(PINI, "YES")
   field(ZNAM, "Positive")
   field(ONAM, "Negative")
+  field(ASG, "$(H_ASG=EXPERT)")
   info(autosaveFields, "VAL")
   info(archive, "Monitor, 00:00:01, VAL")
 }

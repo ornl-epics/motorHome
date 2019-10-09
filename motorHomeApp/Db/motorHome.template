@@ -46,7 +46,7 @@
 # H_PREC -     Display precision (default=4)
 # H_LIM_DIR -  Define which limit switch to move to for both the limit switch homes and the motor record homes.
 #              Default = 0. 0=Neg Limit, 1=Pos Limit
-# H_ASG -      The ASG level to use for the records that configure the home routines (default=BEAMLINE)
+# H_ASG -      The ASG level to use for the records that configure the home routines (default=EXPERT)
 # H_ASG_MOVE - The ASG level to use for the move records (the main Home record included) (default=)
 #
 # Matt Pearson

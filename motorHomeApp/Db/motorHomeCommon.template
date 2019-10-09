@@ -35,7 +35,7 @@ record(mbbo, "$(M)$(H)Type") {
   field(THST, "Limit Switch")
   field(FRST, "Set Current Pos As Home")
   field(FVST, "Set Home Pos Using OFF")
-  field(ASG, "$(H_ASG=BEAMLINE)")
+  field(ASG, "$(H_ASG=EXPERT)")
 }
 
 # ///
@@ -64,7 +64,7 @@ record(ao, "$(M)$(H)Pos") {
   field(VAL, "$(H_POS=0)")
   field(EGU, "$(H_EGU=mm)")
   field(PREC, "$(H_PREC=4)")
-  field(ASG, "$(H_ASG=BEAMLINE)")
+  field(ASG, "$(H_ASG=EXPERT)")
   info(autosaveFields, "VAL")
   info(archive, "Monitor, 00:00:01, VAL")   
 }
@@ -79,7 +79,7 @@ record(ao, "$(M)$(H)Speed") {
   field(PINI, "YES")
   field(VAL, "$(H_SPEED=0.1)")
   field(PREC, "$(H_PREC=4)")
-  field(ASG, "$(H_ASG=BEAMLINE)")
+  field(ASG, "$(H_ASG=EXPERT)")
   info(autosaveFields, "VAL")
   info(archive, "Monitor, 00:00:01, VAL")
 }
@@ -97,7 +97,7 @@ record(mbbo, "$(M)$(H)PMCtl") {
   field(ZRST, "Disabled")
   field(ONST, "Absolute Position")
   field(TWST, "Relative Position")
-  field(ASG, "$(H_ASG=BEAMLINE)")
+  field(ASG, "$(H_ASG=EXPERT)")
   info(autosaveFields, "VAL")
   info(archive, "Monitor, 00:00:01, VAL")   
 }
@@ -110,7 +110,7 @@ record(ao, "$(M)$(H)PMPos") {
   field(VAL, "0.0")
   field(EGU, "$(H_EGU=mm)")
   field(PREC, "$(H_PREC=4)")
-  field(ASG, "$(H_ASG=BEAMLINE)")
+  field(ASG, "$(H_ASG=EXPERT)")
   info(autosaveFields, "VAL")
   info(archive, "Monitor, 00:00:01, VAL")   
 }
@@ -164,7 +164,7 @@ record(mbbo, "$(M)$(H)MBCtl") {
   field(ZRST, "Disabled")
   field(ONST, "Pre-Home Position")
   field(TWST, "Defined Position")
-  field(ASG, "$(H_ASG=BEAMLINE)")
+  field(ASG, "$(H_ASG=EXPERT)")
   info(autosaveFields, "VAL")
   info(archive, "Monitor, 00:00:01, VAL")   
 }
@@ -187,7 +187,7 @@ record(ao, "$(M)$(H)MBPos") {
   field(VAL, "0.0")
   field(EGU, "$(H_EGU=mm)")
   field(PREC, "$(H_PREC=4)")
-  field(ASG, "$(H_ASG=BEAMLINE)")
+  field(ASG, "$(H_ASG=EXPERT)")
   info(autosaveFields, "VAL")
   info(archive, "Monitor, 00:00:01, VAL")   
 }
@@ -348,7 +348,7 @@ record(calcout, "$(M)$(H)DirReverseCalc") {
 record(bo, "$(M)$(H)DirReverse") {
   field(ZNAM, "Not Reversed")
   field(ONAM, "Reversed")
-  field(ASG, "$(H_ASG=BEAMLINE)")
+  field(ASG, "$(H_ASG=EXPERT)")
 }
 
 # ///
@@ -393,7 +393,7 @@ record(bi, "$(M)$(H)LimType") {
   field(PINI, "YES")
   field(ZNAM, "Low Limit")
   field(ONAM, "High Limit")
-  field(ASG, "$(H_ASG=BEAMLINE)")
+  field(ASG, "$(H_ASG=EXPERT)")
 }
 
 # ///
@@ -466,7 +466,7 @@ record(bo, "$(M)$(H)LimCtl") {
    field(VAL, "0")
    field(ZNAM, "No")
    field(ONAM, "Yes")
-   field(ASG, "$(H_ASG=BEAMLINE)")
+   field(ASG, "$(H_ASG=EXPERT)")
    info(autosaveFields_pass0, "VAL")
    info(archive, "Monitor, 00:00:01, VAL")   
 }
@@ -474,7 +474,7 @@ record(ai, "$(M)$(H)LimCtlH") {
    field(PINI, "YES")
    field(EGU, "$(H_EGU=mm)")
    field(PREC, "$(H_PREC=4)")
-   field(ASG, "$(H_ASG=BEAMLINE)")
+   field(ASG, "$(H_ASG=EXPERT)")
    info(autosaveFields, "VAL")
    info(archive, "Monitor, 00:00:01, VAL")
 }
@@ -482,7 +482,7 @@ record(ai, "$(M)$(H)LimCtlL") {
    field(PINI, "YES")
    field(EGU, "$(H_EGU=mm)")
    field(PREC, "$(H_PREC=4)")
-   field(ASG, "$(H_ASG=BEAMLINE)")
+   field(ASG, "$(H_ASG=EXPERT)")
    info(autosaveFields, "VAL")
    info(archive, "Monitor, 00:00:01, VAL")
 }
